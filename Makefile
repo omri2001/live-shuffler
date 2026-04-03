@@ -1,4 +1,4 @@
-.PHONY: dev down frontend backend install clean setup
+.PHONY: dev down frontend backend install clean setup docs
 
 dev:
 	docker compose up --build
@@ -23,3 +23,6 @@ setup:
 	@test -f .env || cp .env.example .env && echo "Created .env from .env.example — fill in your Spotify credentials"
 	cd frontend && npm install
 	cd backend && uv sync
+
+docs:
+	uv run mkdocs serve -a localhost:8080

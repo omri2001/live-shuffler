@@ -1,0 +1,41 @@
+site_name: Live Shuffler
+site_description: Spotify-powered intelligent shuffle based on audio metrics
+site_author: Omri Assa
+repo_url: https://github.com/omri2001/live-shuffler
+repo_name: omri2001/live-shuffler
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Metrics: metrics.md
+  - Architecture: architecture.md
+  - Contributing: contributing.md

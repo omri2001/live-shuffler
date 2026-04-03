@@ -13,6 +13,7 @@ __pycache__/
 # Build
 dist/
 build/
+site/
 
 # Backend runtime files
 backend/app/_sessions.json
