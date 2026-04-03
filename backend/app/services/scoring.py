@@ -40,12 +40,14 @@ Scorer = Callable[[TrackData], int]
 # ---------------------------------------------------------------------------
 
 SCORERS: dict[str, Scorer] = {}
+METRIC_CONFIGS: dict[str, dict] = {}  # {name: {color, type}}
 
 
-def scorer(name: str):
+def scorer(name: str, color: str = "#1DB954"):
     """Decorator to register a custom scorer function under *name*."""
     def decorator(fn: Scorer) -> Scorer:
         SCORERS[name] = fn
+        METRIC_CONFIGS[name] = {"color": color, "type": "custom"}
         return fn
     return decorator
 
@@ -64,6 +66,11 @@ def score_track(track: dict) -> dict[str, int]:
 def get_scorer_names() -> list[str]:
     """Return all registered criterion names."""
     return list(SCORERS.keys())
+
+
+def get_metric_configs() -> dict[str, dict]:
+    """Return config (color, type) for all registered metrics."""
+    return METRIC_CONFIGS
 
 
 def compute_weighted_score(track_scores: dict[str, int], weights: dict[str, int]) -> float:
@@ -188,6 +195,8 @@ def _load_metrics_from_yaml():
             cfg = yaml.safe_load(f)
 
         metric_type = cfg.get("type", "graduated")
+        color = cfg.get("color", "#1DB954")
+        METRIC_CONFIGS[name] = {"color": color, "type": metric_type}
         if metric_type == "binary":
             SCORERS[name] = _build_binary_scorer(cfg)
         else:

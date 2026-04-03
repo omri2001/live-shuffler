@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.services.queue import get_queue
 from app.services.spotify import sessions, spotify_request
 from app.services.metadata import enrich_tracks
-from app.services.scoring import score_track, get_scorer_names
+from app.services.scoring import score_track, get_scorer_names, get_metric_configs
 from app.services.score_cache import get_cached_scores, set_cached_scores_bulk
 
 router = APIRouter()
@@ -188,12 +188,11 @@ async def add_to_queue(request: Request, body: AddTracksBody):
             else:
                 uncached_tracks.append(track)
 
-        scored_count = len(cached_tracks)
-        yield _sse_event({"step": "scoring", "progress": scored_count, "total": total, "message": f"Scoring tracks... {scored_count}/{total} (cached)"})
-
         if uncached_tracks:
+            yield _sse_event({"step": "scoring", "progress": 0, "total": total, "message": f"Scoring tracks... 0/{total}"})
             uncached_tracks = await enrich_tracks(session_id, uncached_tracks)
             new_scores: dict[str, dict[str, int]] = {}
+            scored_count = len(cached_tracks)
             for i, track in enumerate(uncached_tracks):
                 scores = score_track(track)
                 track["_scores"] = scores
@@ -202,6 +201,8 @@ async def add_to_queue(request: Request, body: AddTracksBody):
                 if (i + 1) % 20 == 0 or i == len(uncached_tracks) - 1:
                     yield _sse_event({"step": "scoring", "progress": scored_count, "total": total, "message": f"Scoring tracks... {scored_count}/{total}"})
             set_cached_scores_bulk(new_scores)
+        else:
+            yield _sse_event({"step": "scoring", "progress": total, "total": total, "message": f"Loaded {total} tracks from cache"})
 
         all_tracks = cached_tracks + uncached_tracks
 
@@ -242,8 +243,8 @@ async def rerank(request: Request, body: RerankBody):
 
 @router.get("/scorers")
 async def list_scorers():
-    """Return all available scorer criterion names."""
-    return get_scorer_names()
+    """Return all available metrics with their config (color, type)."""
+    return get_metric_configs()
 
 
 class RemoveSourceBody(BaseModel):

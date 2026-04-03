@@ -1,22 +1,17 @@
+import { useEffect, useState } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
-
-const SCORE_COLORS: Record<string, string> = {
-  hebrew: '#3B82F6',
-  non_english: '#26A69A',
-  hiphop: '#9C27B0',
-  pop: '#E91E63',
-  metal: '#607D8B',
-  jungle: '#4CAF50',
-  dnb: '#FF9800',
-  dubstep: '#F44336',
-  jazz: '#FF9800',
-  chill: '#00BCD4',
-  dance: '#CDDC39',
-};
+import { fetchMetricConfigs, type MetricConfig } from '../../api/spotify';
 
 export default function TrackScores() {
   const { state } = usePlayer();
   const scores = state.currentTrack?._scores;
+  const [configs, setConfigs] = useState<Record<string, MetricConfig>>({});
+
+  useEffect(() => {
+    fetchMetricConfigs().then(setConfigs).catch(() => {});
+  }, []);
+
+  const getColor = (name: string) => configs[name]?.color ?? '#1DB954';
 
   return (
     <div className="absolute left-0 top-0 bottom-20 w-64 bg-spotify-dark-light border-r border-spotify-dark-lighter flex flex-col">
@@ -49,7 +44,7 @@ export default function TrackScores() {
                     <span className="text-xs uppercase tracking-wider text-spotify-gray">
                       {name}
                     </span>
-                    <span className="text-xs font-medium tabular-nums" style={{ color: SCORE_COLORS[name] || '#1DB954' }}>
+                    <span className="text-xs font-medium tabular-nums" style={{ color: getColor(name) }}>
                       {value}
                     </span>
                   </div>
@@ -58,7 +53,7 @@ export default function TrackScores() {
                       className="h-full rounded-full transition-all duration-300"
                       style={{
                         width: `${value}%`,
-                        backgroundColor: SCORE_COLORS[name] || '#1DB954',
+                        backgroundColor: getColor(name),
                       }}
                     />
                   </div>

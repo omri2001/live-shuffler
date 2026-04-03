@@ -182,6 +182,17 @@ export async function fetchQueueStats(): Promise<QueueStats> {
   return res.json();
 }
 
+export interface MetricConfig {
+  color: string;
+  type: string;
+}
+
+export async function fetchMetricConfigs(): Promise<Record<string, MetricConfig>> {
+  const res = await fetch('/api/queue/scorers');
+  if (!res.ok) throw new Error('Failed to fetch metric configs');
+  return res.json();
+}
+
 export async function queueRerank(weights: Record<string, number>): Promise<QueueState> {
   const res = await fetch('/api/queue/rerank', {
     method: 'POST',

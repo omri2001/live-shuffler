@@ -1,3 +1,4 @@
+color: "#26A69A"
 type: binary
 text_regex: "[^\x00-\x7f]"
 genre_keywords:

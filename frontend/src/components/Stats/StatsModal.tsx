@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchQueueStats, type QueueStats } from '../../api/spotify';
-import { METRIC_COLORS } from '../../constants/metricColors';
+import { fetchQueueStats, fetchMetricConfigs, type QueueStats, type MetricConfig } from '../../api/spotify';
 
 interface StatsModalProps {
   open: boolean;
@@ -11,10 +10,12 @@ const BUCKET_ORDER = ['0', '1-19', '20-39', '40-59', '60-79', '80-100'];
 
 export default function StatsModal({ open, onClose }: StatsModalProps) {
   const [stats, setStats] = useState<QueueStats | null>(null);
+  const [configs, setConfigs] = useState<Record<string, MetricConfig>>({});
 
   useEffect(() => {
     if (!open) return;
     fetchQueueStats().then(setStats).catch(() => setStats(null));
+    fetchMetricConfigs().then(setConfigs).catch(() => {});
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -23,6 +24,8 @@ export default function StatsModal({ open, onClose }: StatsModalProps) {
   }, [open, onClose]);
 
   if (!open) return null;
+
+  const getColor = (name: string) => configs[name]?.color ?? '#1DB954';
 
   const metrics = stats
     ? Object.entries(stats.metrics)
@@ -60,16 +63,16 @@ export default function StatsModal({ open, onClose }: StatsModalProps) {
               <div className="space-y-6">
                 {metrics.map(({ name, buckets }) => {
                   const maxCount = Math.max(...BUCKET_ORDER.map((b) => buckets[b] ?? 0), 1);
+                  const color = getColor(name);
                   return (
                     <div key={name}>
-                      <p className="text-sm font-medium capitalize mb-2" style={{ color: METRIC_COLORS[name] ?? '#1DB954' }}>
+                      <p className="text-sm font-medium capitalize mb-2" style={{ color }}>
                         {name.replace('_', ' ')}
                       </p>
                       <div className="flex items-end gap-1 h-20">
                         {BUCKET_ORDER.map((label) => {
                           const count = buckets[label] ?? 0;
                           const heightPct = (count / maxCount) * 100;
-                          const color = METRIC_COLORS[name] ?? '#1DB954';
                           return (
                             <div key={label} className="flex-1 flex flex-col items-center h-full justify-end group">
                               <span className="text-[10px] text-spotify-gray tabular-nums mb-1 opacity-0 group-hover:opacity-100 transition-opacity">

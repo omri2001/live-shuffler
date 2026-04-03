@@ -1,3 +1,4 @@
+color: "#3B82F6"
 type: binary
 text_regex: "[\u0590-\u05FF]"
 genre_keywords:
