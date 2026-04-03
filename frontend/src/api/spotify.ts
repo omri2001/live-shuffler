@@ -171,6 +171,17 @@ export async function queueShuffleRandom(): Promise<QueueState> {
   return res.json();
 }
 
+export interface QueueStats {
+  total: number;
+  metrics: Record<string, Record<string, number>>;
+}
+
+export async function fetchQueueStats(): Promise<QueueStats> {
+  const res = await fetch('/api/queue/stats');
+  if (!res.ok) throw new Error('Failed to fetch stats');
+  return res.json();
+}
+
 export async function queueRerank(weights: Record<string, number>): Promise<QueueState> {
   const res = await fetch('/api/queue/rerank', {
     method: 'POST',

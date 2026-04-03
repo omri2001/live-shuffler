@@ -4,19 +4,7 @@ import MetricSlider from './MetricSlider';
 import { usePlayer } from '../../context/PlayerContext';
 import * as api from '../../api/spotify';
 
-const METRIC_COLORS: Record<string, string> = {
-  hebrew: '#3B82F6',
-  non_english: '#26A69A',
-  hiphop: '#9C27B0',
-  pop: '#E91E63',
-  metal: '#607D8B',
-  jungle: '#4CAF50',
-  dnb: '#FF9800',
-  dubstep: '#F44336',
-  jazz: '#FF9800',
-  chill: '#00BCD4',
-  dance: '#CDDC39',
-};
+import { METRIC_COLORS } from '../../constants/metricColors';
 
 const METRIC_NAMES = Object.keys(METRIC_COLORS);
 
@@ -119,7 +107,7 @@ export default function GenreCircles() {
       if (!circleHover.current && !sliderHover.current) {
         setHoveredMetric(null);
       }
-    }, 50);
+    }, 200);
   }, []);
 
   const handleCircleHover = useCallback((name: string, hovering: boolean) => {

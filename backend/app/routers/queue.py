@@ -61,6 +61,38 @@ async def get_queue_state(request: Request):
     return q.to_dict()
 
 
+@router.get("/stats")
+async def get_queue_stats(request: Request):
+    """Return score distributions for all unplayed tracks."""
+    session_id = get_session_id(request)
+    if not session_id:
+        return Response(status_code=401)
+    q = get_queue(session_id)
+
+    unplayed = [t for t in q.all_tracks if t["id"] not in q.played]
+    # Collect distributions: {metric: {bucket_label: count}}
+    buckets = [
+        ("0", 0, 0),
+        ("1-19", 1, 19),
+        ("20-39", 20, 39),
+        ("40-59", 40, 59),
+        ("60-79", 60, 79),
+        ("80-100", 80, 100),
+    ]
+    metrics: dict[str, dict] = {}
+    for t in unplayed:
+        scores = t.get("_scores", {})
+        for name, score in scores.items():
+            if name not in metrics:
+                metrics[name] = {b[0]: 0 for b in buckets}
+            for label, lo, hi in buckets:
+                if lo <= score <= hi:
+                    metrics[name][label] += 1
+                    break
+
+    return {"total": len(unplayed), "metrics": metrics}
+
+
 async def _fetch_tracks_for_source(
     session_id: str, source: str, playlist_id: str | None, album_id: str | None
 ) -> tuple[str, list[dict]]:

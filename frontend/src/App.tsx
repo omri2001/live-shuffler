@@ -9,6 +9,7 @@ import PlayerBar from './components/PlayerBar/PlayerBar';
 import TrackScores from './components/PlayerBar/TrackScores';
 import QueuePanel from './components/Queue/QueuePanel';
 import SettingsModal from './components/Settings/SettingsModal';
+import StatsModal from './components/Stats/StatsModal';
 import LibraryModal from './components/Library/LibraryModal';
 import LoginButton from './components/Auth/LoginButton';
 
@@ -18,6 +19,7 @@ function AppContent() {
   const [user, setUser] = useState<SpotifyUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [queueSize, setQueueSize] = useState(10);
@@ -70,6 +72,17 @@ function AppContent() {
             </svg>
           </button>
           <button
+            onClick={() => setStatsOpen(true)}
+            className="w-9 h-9 rounded-full bg-spotify-dark-lighter/80 flex items-center justify-center text-spotify-gray hover:text-spotify-white hover:bg-spotify-dark-lighter transition-colors"
+            title="Queue Stats"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="10" width="3" height="6" rx="0.5" />
+              <rect x="7.5" y="6" width="3" height="10" rx="0.5" />
+              <rect x="13" y="2" width="3" height="14" rx="0.5" />
+            </svg>
+          </button>
+          <button
             onClick={() => setSettingsOpen(true)}
             className="w-9 h-9 rounded-full bg-spotify-dark-lighter/80 flex items-center justify-center text-spotify-gray hover:text-spotify-white hover:bg-spotify-dark-lighter transition-colors"
             title="Settings"
@@ -94,6 +107,11 @@ function AppContent() {
             setQueueSize(size);
             try { await apiSetQueueSize(size); } catch { /* ignore */ }
           }}
+        />
+
+        <StatsModal
+          open={statsOpen}
+          onClose={() => setStatsOpen(false)}
         />
 
         <LibraryModal

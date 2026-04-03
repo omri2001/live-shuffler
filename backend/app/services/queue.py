@@ -113,16 +113,19 @@ class QueueState:
         # General slots = remainder
         general_slots = max(0, slots_needed - allocated)
 
-        # Pick top songs per metric
+        # Pick top songs per metric (only tracks that actually score > 0)
         picked_ids: set[str] = set()
         result: list[dict] = []
 
         for metric_name, num_slots in slot_alloc.items():
-            candidates = sorted(
-                [t for t in available if t["id"] not in picked_ids],
-                key=lambda t: t.get("_scores", {}).get(metric_name, 0) + random.uniform(0, 15),
-                reverse=True,
-            )
+            candidates = [
+                t for t in available
+                if t["id"] not in picked_ids and t.get("_scores", {}).get(metric_name, 0) > 0
+            ]
+            candidates.sort(key=lambda t: t["_scores"][metric_name], reverse=True)
+            # Shuffle among ties to keep variety
+            random.shuffle(candidates)
+            candidates.sort(key=lambda t: t["_scores"][metric_name], reverse=True)
             for track in candidates[:num_slots]:
                 result.append(track)
                 picked_ids.add(track["id"])
@@ -161,33 +164,40 @@ class QueueState:
         weights = self.last_weights
         if weights and any(w > 0 for w in weights.values()):
             active = {k: v for k, v in weights.items() if v > 0}
-            total_pct = min(sum(active.values()), 100)
-            # For each needed slot, decide: metric pick or general pick
+            total_metric_pct = min(sum(active.values()), 100)
+            general_pct = 100 - total_metric_pct
+
+            # Allocate refill slots the same way as rerank
+            slot_alloc: dict[str, int] = {}
+            allocated = 0
+            for name, w in active.items():
+                n = round(needed * w / 100)
+                slot_alloc[name] = n
+                allocated += n
+            general_slots = max(0, needed - allocated)
+
             added: list[dict] = []
             used_ids: set[str] = set()
-            for _ in range(needed):
-                pool = [t for t in available if t["id"] not in used_ids]
-                if not pool:
-                    break
-                # Roll: metric or general?
-                roll = random.randint(1, 100)
-                if roll <= total_pct:
-                    # Pick a metric proportionally
-                    r = random.randint(1, total_pct)
-                    cumulative = 0
-                    chosen_metric = list(active.keys())[0]
-                    for name, w in active.items():
-                        cumulative += w
-                        if r <= cumulative:
-                            chosen_metric = name
-                            break
-                    # Pick best song for that metric
-                    pool.sort(key=lambda t: t.get("_scores", {}).get(chosen_metric, 0) + random.uniform(0, 15), reverse=True)
-                else:
-                    # General: random
-                    random.shuffle(pool)
-                added.append(pool[0])
-                used_ids.add(pool[0]["id"])
+
+            for metric_name, num_slots in slot_alloc.items():
+                candidates = [
+                    t for t in available
+                    if t["id"] not in used_ids and t.get("_scores", {}).get(metric_name, 0) > 0
+                ]
+                random.shuffle(candidates)
+                candidates.sort(key=lambda t: t["_scores"][metric_name], reverse=True)
+                for track in candidates[:num_slots]:
+                    added.append(track)
+                    used_ids.add(track["id"])
+
+            if general_slots > 0:
+                remaining = [t for t in available if t["id"] not in used_ids]
+                random.shuffle(remaining)
+                for t in remaining[:general_slots]:
+                    added.append(t)
+                    used_ids.add(t["id"])
+
+            random.shuffle(added)
             self.tracks.extend(added)
         else:
             random.shuffle(available)
