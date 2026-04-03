@@ -17,7 +17,7 @@
 ## Installation
 
 ```bash
-git clone https://github.com/omri2001/live-shuffler.git
+git clone https://github.com/definitelyOmri/live-shuffler.git
 cd live-shuffler
 make setup
 ```

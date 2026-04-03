@@ -31,7 +31,7 @@ A Spotify-powered web app that replaces random shuffle with intelligent, metric-
 
 ```bash
 # Clone the repo
-git clone https://github.com/omri2001/live-shuffler.git
+git clone https://github.com/definitelyOmri/live-shuffler.git
 cd live-shuffler
 
 # Run setup (creates .env, installs deps)

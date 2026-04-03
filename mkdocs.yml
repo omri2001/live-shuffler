@@ -1,8 +1,8 @@
 site_name: Live Shuffler
 site_description: Spotify-powered intelligent shuffle based on audio metrics
 site_author: Omri Assa
-repo_url: https://github.com/omri2001/live-shuffler
-repo_name: omri2001/live-shuffler
+repo_url: https://github.com/definitelyOmri/live-shuffler
+repo_name: definitelyOmri/live-shuffler
 
 theme:
   name: material

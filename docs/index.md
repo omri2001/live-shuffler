@@ -7,7 +7,7 @@ Set weighted sliders for genres, language, mood, and tempo — and your queue re
 ## Quick Start
 
 ```bash
-git clone https://github.com/omri2001/live-shuffler.git
+git clone https://github.com/definitelyOmri/live-shuffler.git
 cd live-shuffler
 make setup       # Creates .env, installs dependencies
 # Edit .env with your Spotify credentials

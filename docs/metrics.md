@@ -9,17 +9,6 @@ Scores combine two signals:
 
 ---
 
-## Hebrew
-
-**Type:** Binary (0 or 100)
-
-Detects Hebrew-language music. Returns 100 if any of these match:
-
-- Track or album name contains Hebrew characters (unicode range `\u0590-\u05FF`)
-- Any artist name contains Hebrew characters
-- Artist or album genres contain "hebrew" or "israeli"
-
----
 
 ## Non-English
 
