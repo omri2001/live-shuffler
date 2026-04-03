@@ -160,8 +160,8 @@ export default function GenreCircles() {
   const getColor = (name: string) => metricConfigs[name]?.color ?? '#1DB954';
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pl-64 pr-80">
-      <div className="relative w-full max-w-3xl px-12">
+    <div className="absolute inset-0 flex items-center justify-center pl-64 pr-80 pointer-events-none">
+      <div className="pointer-events-auto relative w-full max-w-3xl px-12">
         {canScrollLeft && (
           <button
             onClick={() => scroll('left')}

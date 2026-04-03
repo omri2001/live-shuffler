@@ -198,7 +198,7 @@ class QueueState:
                     used_ids.add(t["id"])
 
             random.shuffle(added)
-            self.tracks.extend(added)
+            self.tracks.extend(added[:needed])
         else:
             random.shuffle(available)
             self.tracks.extend(available[:needed])

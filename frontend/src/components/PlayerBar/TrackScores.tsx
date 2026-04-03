@@ -15,7 +15,7 @@ export default function TrackScores() {
 
   return (
     <div className="absolute left-0 top-0 bottom-20 w-64 bg-spotify-dark-light border-r border-spotify-dark-lighter flex flex-col">
-      <div className="px-4 py-3 border-b border-spotify-dark-lighter">
+      <div className="px-4 py-3 border-b border-spotify-dark-lighter shrink-0">
         <h2 className="text-sm font-bold text-spotify-white">Song Metrics</h2>
       </div>
 
@@ -37,7 +37,7 @@ export default function TrackScores() {
 
           {/* Scores */}
           {scores && Object.keys(scores).length > 0 ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 pb-6">
               {Object.entries(scores).map(([name, value]) => (
                 <div key={name}>
                   <div className="flex items-center justify-between mb-1">
