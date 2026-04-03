@@ -1,0 +1,13 @@
+type: graduated
+genres:
+  primary: [jazz]
+  artist_score: 75
+  album_score: 60
+subgenres:
+  keywords: [bebop, swing, fusion, smooth jazz, nu jazz, acid jazz]
+  bonus: 10
+audio_boosts:
+  - feature: acousticness
+    weight: 10
+  - feature: instrumentalness
+    weight: 10

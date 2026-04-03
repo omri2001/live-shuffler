@@ -1,0 +1,11 @@
+type: graduated
+genres:
+  primary: [jungle]
+  artist_score: 75
+  album_score: 60
+subgenres:
+  keywords: [breakcore, breakbeat, ragga jungle]
+  bonus: 10
+tempo:
+  - min: 160
+    bonus: 15

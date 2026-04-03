@@ -15,12 +15,25 @@ _CACHE_FILE = Path(__file__).resolve().parent.parent / "_score_cache.json"
 _cache: dict[str, dict[str, int]] = {}
 
 
+_METRICS_DIR = Path(__file__).resolve().parent.parent / "metrics"
+
+
 def _scorer_fingerprint() -> str:
-    """Hash of all scorer names + source code. Changes when any scorer is added/removed/modified."""
+    """Hash of scorer names + metrics YAML content + custom scorer source code.
+    Changes when any metric config or custom scorer is added/removed/modified."""
     h = hashlib.md5()
+    # Include all YAML metric files
+    if _METRICS_DIR.is_dir():
+        for yml_path in sorted(_METRICS_DIR.glob("*.yml")):
+            h.update(yml_path.name.encode())
+            h.update(yml_path.read_bytes())
+    # Include custom (non-YAML) scorer source
     for name in sorted(SCORERS.keys()):
         h.update(name.encode())
-        h.update(inspect.getsource(SCORERS[name]).encode())
+        try:
+            h.update(inspect.getsource(SCORERS[name]).encode())
+        except OSError:
+            pass  # YAML-generated closures don't have inspectable source
     return h.hexdigest()
 
 

@@ -1,0 +1,17 @@
+type: graduated
+genres:
+  primary: [chill, chillout, lo-fi, ambient, downtempo, chillwave, lounge]
+  artist_score: 70
+  album_score: 55
+audio_boosts:
+  - feature: energy
+    weight: 15
+    invert: true
+  - feature: acousticness
+    weight: 10
+tempo:
+  - max: 100
+    bonus: 10
+  - min: 100
+    max: 120
+    bonus: 5

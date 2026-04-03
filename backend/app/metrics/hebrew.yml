@@ -1,0 +1,5 @@
+type: binary
+text_regex: "[\u0590-\u05FF]"
+genre_keywords:
+  - hebrew
+  - israeli

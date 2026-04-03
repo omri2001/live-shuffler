@@ -1,0 +1,12 @@
+type: graduated
+genres:
+  primary: [drum and bass, dnb, "d&b", liquid funk]
+  artist_score: 75
+  album_score: 60
+subgenres:
+  keywords: [neurofunk, jump up, liquid dnb]
+  bonus: 10
+tempo:
+  - min: 165
+    max: 185
+    bonus: 15

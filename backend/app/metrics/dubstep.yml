@@ -1,0 +1,15 @@
+type: graduated
+genres:
+  primary: [dubstep, brostep, riddim]
+  artist_score: 75
+  album_score: 60
+subgenres:
+  keywords: [bass music, filthstep, tearout]
+  bonus: 10
+audio_boosts:
+  - feature: energy
+    weight: 10
+tempo:
+  - min: 135
+    max: 150
+    bonus: 10

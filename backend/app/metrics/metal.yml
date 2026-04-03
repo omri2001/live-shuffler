@@ -1,0 +1,14 @@
+type: graduated
+genres:
+  primary: [metal, metalcore, deathcore]
+  artist_score: 75
+  album_score: 60
+subgenres:
+  keywords: [death metal, black metal, thrash metal, doom metal, heavy metal, groove metal, nu metal, progressive metal]
+  bonus: 15
+audio_boosts:
+  - feature: energy
+    weight: 10
+  - feature: valence
+    weight: 5
+    invert: true

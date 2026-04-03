@@ -1,0 +1,42 @@
+type: binary
+text_regex: "[^\x00-\x7f]"
+genre_keywords:
+  - hebrew
+  - israeli
+  - latin
+  - reggaeton
+  - k-pop
+  - j-pop
+  - french
+  - german
+  - spanish
+  - arabic
+  - turkish
+  - korean
+  - japanese
+  - chinese
+  - brazilian
+  - afrobeat
+  - bollywood
+  - hindi
+  - punjabi
+  - portuguese
+  - italian
+  - swedish
+  - mpb
+  - samba
+  - bossa nova
+  - forr
+  - sertanejo
+  - axe
+  - cumbia
+  - vallenato
+  - bachata
+  - flamenco
+  - fado
+  - mandopop
+  - cantopop
+  - schlager
+  - chanson
+  - enka
+  - mizrahi

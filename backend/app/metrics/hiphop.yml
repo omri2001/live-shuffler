@@ -1,0 +1,11 @@
+type: graduated
+genres:
+  primary: [hip hop, rap, trap]
+  artist_score: 75
+  album_score: 60
+subgenres:
+  keywords: [gangsta rap, drill, grime, crunk]
+  bonus: 10
+audio_boosts:
+  - feature: speechiness
+    weight: 15
