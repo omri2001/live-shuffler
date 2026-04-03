@@ -1,0 +1,15 @@
+type: graduated
+genres:
+  primary: [funk, p-funk, go-go, funk rock, electro funk]
+  artist_score: 80
+  album_score: 65
+subgenres:
+  keywords: [boogie, disco funk, funk soul, afrobeat, synth funk, funk metal, acid funk, nu-funk, funk carioca]
+  bonus: 10
+audio_boosts:
+  - feature: danceability
+    weight: 15
+  - feature: energy
+    weight: 10
+  - feature: valence
+    weight: 5

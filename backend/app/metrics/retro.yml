@@ -1,0 +1,13 @@
+type: graduated
+genres:
+  primary: [disco, euro disco, italo disco, synth-pop, new wave, post-disco, hi-nrg]
+  artist_score: 80
+  album_score: 65
+subgenres:
+  keywords: [motown, classic soul, northern soul, funk, boogie, yacht rock, soft rock, classic rock, oldies, bubblegum pop, europop, schlager, doo-wop, girl group]
+  bonus: 10
+audio_boosts:
+  - feature: danceability
+    weight: 10
+  - feature: valence
+    weight: 10

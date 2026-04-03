@@ -1,0 +1,17 @@
+type: graduated
+genres:
+  primary: [house, deep house, tech house, progressive house, acid house, chicago house, afro house]
+  artist_score: 80
+  album_score: 65
+subgenres:
+  keywords: [funky house, electro house, tribal house, soulful house, jackin house, minimal house, uk garage, disco house]
+  bonus: 10
+audio_boosts:
+  - feature: danceability
+    weight: 15
+  - feature: energy
+    weight: 10
+tempo:
+  - min: 118
+    max: 132
+    bonus: 10

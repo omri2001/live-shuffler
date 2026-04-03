@@ -1,0 +1,18 @@
+type: graduated
+genres:
+  primary: [edm, trap, hardstyle, big room, festival, rave]
+  artist_score: 65
+  album_score: 50
+subgenres:
+  keywords: [bass drop, banger, mainstage, crowd, anthemic, party]
+  bonus: 10
+audio_boosts:
+  - feature: energy
+    weight: 25
+  - feature: danceability
+    weight: 10
+  - feature: valence
+    weight: 10
+tempo:
+  - min: 125
+    bonus: 10

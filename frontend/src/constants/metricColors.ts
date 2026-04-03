@@ -10,4 +10,9 @@ export const METRIC_COLORS: Record<string, string> = {
   jazz: '#FF9800',
   chill: '#00BCD4',
   dance: '#CDDC39',
+  rap: '#8E24AA',
+  hype: '#FF1744',
+  retro: '#FFD54F',
+  house: '#7C4DFF',
+  funk: '#FF6D00',
 };

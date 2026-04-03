@@ -1,0 +1,13 @@
+type: graduated
+genres:
+  primary: [rap, rapper]
+  artist_score: 80
+  album_score: 65
+subgenres:
+  keywords: [gangsta rap, conscious rap, mumble rap, drill, grime, trap rap, boom bap, east coast hip hop, west coast hip hop, southern hip hop, chicago rap, underground rap]
+  bonus: 10
+audio_boosts:
+  - feature: speechiness
+    weight: 20
+  - feature: energy
+    weight: 5
