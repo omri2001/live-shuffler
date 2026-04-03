@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fetchMe, setQueueSize as apiSetQueueSize } from './api/spotify';
+import { fetchMe, setQueueSize as apiSetQueueSize, logout } from './api/spotify';
 import type { SpotifyUser } from './types/spotify';
 import { PlayerProvider } from './context/PlayerContext';
 import AppLayout from './components/Layout/AppLayout';
@@ -21,6 +21,7 @@ function AppContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [queueSize, setQueueSize] = useState(10);
 
@@ -92,6 +93,44 @@ function AppContent() {
               <path d="M14.7 11.1a1.2 1.2 0 00.24 1.32l.04.04a1.44 1.44 0 11-2.04 2.04l-.04-.04a1.2 1.2 0 00-1.32-.24 1.2 1.2 0 00-.72 1.08v.12a1.44 1.44 0 11-2.88 0v-.06a1.2 1.2 0 00-.78-1.08 1.2 1.2 0 00-1.32.24l-.04.04a1.44 1.44 0 11-2.04-2.04l.04-.04a1.2 1.2 0 00.24-1.32 1.2 1.2 0 00-1.08-.72h-.12a1.44 1.44 0 110-2.88h.06a1.2 1.2 0 001.08-.78 1.2 1.2 0 00-.24-1.32l-.04-.04a1.44 1.44 0 112.04-2.04l.04.04a1.2 1.2 0 001.32.24h.06a1.2 1.2 0 00.72-1.08v-.12a1.44 1.44 0 112.88 0v.06a1.2 1.2 0 00.72 1.08 1.2 1.2 0 001.32-.24l.04-.04a1.44 1.44 0 112.04 2.04l-.04.04a1.2 1.2 0 00-.24 1.32v.06a1.2 1.2 0 001.08.72h.12a1.44 1.44 0 110 2.88h-.06a1.2 1.2 0 00-1.08.72z" />
             </svg>
           </button>
+
+          {/* User avatar */}
+          <div className="relative">
+            <button
+              onClick={() => setAvatarMenuOpen((o) => !o)}
+              className="w-9 h-9 rounded-full overflow-hidden border-2 border-transparent hover:border-spotify-green transition-colors"
+              title={user.display_name}
+            >
+              {user.images?.[0]?.url ? (
+                <img src={user.images[0].url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-spotify-dark-lighter flex items-center justify-center text-spotify-gray text-sm font-bold">
+                  {user.display_name?.[0]?.toUpperCase() ?? '?'}
+                </div>
+              )}
+            </button>
+
+            {avatarMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setAvatarMenuOpen(false)} />
+                <div className="absolute right-0 top-11 z-50 bg-spotify-dark-light border border-spotify-dark-lighter rounded-lg shadow-xl py-2 w-48">
+                  <div className="px-4 py-2 border-b border-spotify-dark-lighter">
+                    <p className="text-sm font-medium text-spotify-white truncate">{user.display_name}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await logout();
+                      setUser(null);
+                      setAvatarMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-spotify-gray hover:text-spotify-white hover:bg-spotify-dark-lighter transition-colors"
+                  >
+                    Log out
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <QueuePanel />

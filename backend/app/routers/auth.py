@@ -70,3 +70,11 @@ async def me(request: Request):
     from app.services.spotify import spotify_request
     resp = await spotify_request(session_id, "GET", "/me")
     return resp.json()
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    session_id = request.cookies.get("session_id")
+    if session_id and session_id in sessions:
+        del sessions[session_id]
+    return {"ok": True}

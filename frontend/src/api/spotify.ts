@@ -6,6 +6,11 @@ export async function fetchMe(): Promise<SpotifyUser | null> {
   return res.json();
 }
 
+export async function logout(): Promise<void> {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  document.cookie = 'session_id=; path=/; max-age=0';
+}
+
 export async function fetchTracks(offset = 0, limit = 50): Promise<{ items: { track: Track }[]; total: number }> {
   const res = await fetch(`/api/tracks?offset=${offset}&limit=${limit}`);
   if (!res.ok) throw new Error('Failed to fetch tracks');
