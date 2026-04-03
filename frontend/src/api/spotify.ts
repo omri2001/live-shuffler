@@ -62,10 +62,14 @@ export async function addSourceWithProgress(
   playlistId?: string,
   albumId?: string,
 ): Promise<void> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000); // 2 min timeout
+  try {
   const res = await fetch('/api/queue/add', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ source, playlist_id: playlistId, album_id: albumId }),
+    signal: controller.signal,
   });
   if (!res.ok) throw new Error('Failed to add source');
 
@@ -93,6 +97,9 @@ export async function addSourceWithProgress(
         }
       }
     }
+  }
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

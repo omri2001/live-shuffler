@@ -41,7 +41,7 @@ export default function StatsModal({ open, onClose }: StatsModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
 
-      <div className="relative bg-spotify-dark-light rounded-xl shadow-2xl w-[540px] max-w-[90vw] max-h-[80vh] border border-spotify-dark-lighter flex flex-col">
+      <div className="relative bg-spotify-dark-light rounded-xl shadow-2xl w-[680px] max-w-[90vw] max-h-[80vh] border border-spotify-dark-lighter flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-spotify-dark-lighter shrink-0">
           <h2 className="text-lg font-bold text-spotify-white">Score Distribution</h2>
           <button
@@ -60,7 +60,7 @@ export default function StatsModal({ open, onClose }: StatsModalProps) {
           ) : (
             <>
               <p className="text-xs text-spotify-gray mb-5">{stats.total} unplayed tracks</p>
-              <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                 {metrics.map(({ name, buckets }) => {
                   const maxCount = Math.max(...BUCKET_ORDER.map((b) => buckets[b] ?? 0), 1);
                   const color = getColor(name);

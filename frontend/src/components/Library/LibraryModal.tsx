@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
 import * as api from '../../api/spotify';
 
 interface LibraryModalProps {
   open: boolean;
   onClose: () => void;
+  onError?: (message: string) => void;
 }
 
 type Tab = 'active' | 'liked' | 'playlists' | 'albums';
@@ -40,7 +41,7 @@ function sourceLabel(key: string, playlists: Playlist[], albums: Album[]): { nam
   return { name: key, detail: '' };
 }
 
-export default function LibraryModal({ open, onClose }: LibraryModalProps) {
+export default function LibraryModal({ open, onClose, onError }: LibraryModalProps) {
   const { state, refreshQueue } = usePlayer();
   const [tab, setTab] = useState<Tab>('active');
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -50,6 +51,7 @@ export default function LibraryModal({ open, onClose }: LibraryModalProps) {
   const [addingStatus, setAddingStatus] = useState('');
   const [addingProgress, setAddingProgress] = useState(0);
   const [addingTotal, setAddingTotal] = useState(0);
+  const cumulativeRef = useRef(0);
   const [removing, setRemoving] = useState<string | null>(null);
 
   const loadedSources = new Set(state.sources);
@@ -80,20 +82,32 @@ export default function LibraryModal({ open, onClose }: LibraryModalProps) {
     if (loadedSources.has(key)) return;
     setAdding(key);
     setAddingStatus('Fetching tracks...');
-    setAddingProgress(0);
-    setAddingTotal(0);
+    const base = cumulativeRef.current;
+    let lastTotal = 0;
+    setAddingProgress(base);
     try {
+      let hadError = false;
       await api.addSourceWithProgress(source, (p) => {
         setAddingStatus(p.message);
-        if (p.total) setAddingTotal(p.total);
-        if (p.progress !== undefined) setAddingProgress(p.progress);
+        if (p.step === 'error') {
+          hadError = true;
+          onError?.(p.message || 'Failed to add tracks');
+        }
+        if (p.total) {
+          lastTotal = p.total;
+          setAddingTotal(base + p.total);
+        }
+        if (p.progress !== undefined) setAddingProgress(base + p.progress);
+        if (p.step === 'done') {
+          cumulativeRef.current = base + lastTotal;
+        }
       }, playlistId, albumId);
-      await refreshQueue();
+      if (!hadError) await refreshQueue();
+    } catch {
+      onError?.('Failed to add tracks — Spotify may be rate limiting');
     } finally {
       setAdding(null);
       setAddingStatus('');
-      setAddingProgress(0);
-      setAddingTotal(0);
     }
   };
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from app.services.queue import get_queue
 from app.services.spotify import sessions, spotify_request
-from app.services.metadata import enrich_tracks
+from app.services.metadata import enrich_artist_genres, enrich_album_genres, enrich_audio_features, attach_enrichment
 from app.services.scoring import score_track, get_scorer_names, get_metric_configs
 from app.services.score_cache import get_cached_scores, set_cached_scores_bulk
 
@@ -132,16 +132,20 @@ async def _fetch_tracks_for_source(
         return f"playlist:{playlist_id}", tracks
 
     elif source == "album" and album_id:
-        # Album tracks don't include full track objects — need to fetch album first
+        # Album track items are simplified — fetch full track objects via /tracks endpoint
         resp = await spotify_request(session_id, "GET", f"/albums/{album_id}")
         if resp.status_code == 200:
             album_data = resp.json()
-            album_info = {"id": album_data["id"], "name": album_data["name"], "images": album_data.get("images", [])}
-            for item in album_data.get("tracks", {}).get("items", []):
-                # Album track items are simplified — add album info
-                item["album"] = album_info
-                if item.get("id"):
-                    tracks.append(item)
+            track_ids = [item["id"] for item in album_data.get("tracks", {}).get("items", []) if item.get("id")]
+            # Fetch full track objects in batches of 50
+            for i in range(0, len(track_ids), 50):
+                batch = track_ids[i:i+50]
+                ids_param = ",".join(batch)
+                tresp = await spotify_request(session_id, "GET", f"/tracks?ids={ids_param}")
+                if tresp.status_code == 200:
+                    for t in tresp.json().get("tracks", []):
+                        if t and t.get("id"):
+                            tracks.append(t)
         return f"album:{album_id}", tracks
 
     return "", []
@@ -189,8 +193,15 @@ async def add_to_queue(request: Request, body: AddTracksBody):
                 uncached_tracks.append(track)
 
         if uncached_tracks:
+            yield _sse_event({"step": "enriching", "progress": 0, "total": 2, "message": "Fetching artist genres..."})
+            genre_map = await enrich_artist_genres(session_id, uncached_tracks)
+
+            yield _sse_event({"step": "enriching", "progress": 1, "total": 2, "message": "Fetching audio features..."})
+            audio_map = await enrich_audio_features(uncached_tracks)
+
+            uncached_tracks = attach_enrichment(uncached_tracks, genre_map, {}, audio_map)
+
             yield _sse_event({"step": "scoring", "progress": 0, "total": total, "message": f"Scoring tracks... 0/{total}"})
-            uncached_tracks = await enrich_tracks(session_id, uncached_tracks)
             new_scores: dict[str, dict[str, int]] = {}
             scored_count = len(cached_tracks)
             for i, track in enumerate(uncached_tracks):

@@ -4,6 +4,7 @@ Accepts Spotify track IDs directly. Batch endpoint supports up to 40 IDs per req
 """
 
 from __future__ import annotations
+from typing import Callable
 import httpx
 
 RECCOBEATS_BASE = "https://api.reccobeats.com"
@@ -14,14 +15,18 @@ def _chunk(lst: list, size: int):
         yield lst[i : i + size]
 
 
-async def fetch_audio_features(track_ids: list[str]) -> dict[str, dict]:
+async def fetch_audio_features(
+    track_ids: list[str],
+    on_progress: Callable[[str, int, int], None] | None = None,
+) -> dict[str, dict]:
     """Fetch audio features for Spotify track IDs via ReccoBeats.
 
     Returns {spotify_track_id: {acousticness, danceability, energy, ...}}.
     """
     result: dict[str, dict] = {}
+    total = len(track_ids)
 
-    for batch in _chunk(track_ids, 40):
+    for i, batch in enumerate(_chunk(track_ids, 40)):
         ids_param = ",".join(batch)
         try:
             async with httpx.AsyncClient() as client:
@@ -53,5 +58,7 @@ async def fetch_audio_features(track_ids: list[str]) -> dict[str, dict]:
                     }
         except Exception:
             continue
+        if on_progress:
+            on_progress("audio", min((i + 1) * 40, total), total)
 
     return result

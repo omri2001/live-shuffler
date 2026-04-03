@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from pathlib import Path
@@ -75,10 +76,16 @@ async def spotify_request(
         raise ValueError("No valid token")
 
     async with httpx.AsyncClient() as client:
-        resp = await client.request(
-            method,
-            f"{SPOTIFY_API_BASE}{path}",
-            headers={"Authorization": f"Bearer {token}"},
-            **kwargs,
-        )
+        for attempt in range(3):
+            resp = await client.request(
+                method,
+                f"{SPOTIFY_API_BASE}{path}",
+                headers={"Authorization": f"Bearer {token}"},
+                **kwargs,
+            )
+            if resp.status_code == 429:
+                retry_after = int(resp.headers.get("Retry-After", 2))
+                await asyncio.sleep(retry_after)
+                continue
+            return resp
     return resp

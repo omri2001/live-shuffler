@@ -5,6 +5,7 @@ Uses Spotify API for artist/album genres, ReccoBeats API for audio features
 """
 
 from __future__ import annotations
+from typing import Callable
 from app.services.spotify import spotify_request
 from app.services.reccobeats import fetch_audio_features
 
@@ -50,22 +51,31 @@ async def fetch_album_artists_genres(session_id: str, album_ids: list[str]) -> d
     return result
 
 
-async def enrich_tracks(session_id: str, tracks: list[dict]) -> list[dict]:
-    """Enrich tracks with artist genres, album-level genres, and audio features.
-
-    Adds `_artist_genres`, `_album_genres`, and `_audio_features` keys to each track dict.
-    """
-    # Collect unique IDs
+async def enrich_artist_genres(session_id: str, tracks: list[dict]) -> dict[str, list[str]]:
+    """Fetch artist genres for all tracks. Returns {artist_id: [genres]}."""
     artist_ids = list({a["id"] for t in tracks for a in t.get("artists", []) if a.get("id")})
+    return await fetch_artist_genres(session_id, artist_ids)
+
+
+async def enrich_album_genres(session_id: str, tracks: list[dict]) -> dict[str, list[str]]:
+    """Fetch album-level genres for all tracks. Returns {album_id: [genres]}."""
     album_ids = list({t["album"]["id"] for t in tracks if t.get("album", {}).get("id")})
+    return await fetch_album_artists_genres(session_id, album_ids)
+
+
+async def enrich_audio_features(tracks: list[dict]) -> dict[str, dict]:
+    """Fetch audio features for all tracks. Returns {track_id: {features}}."""
     track_ids = [t["id"] for t in tracks if t.get("id")]
+    return await fetch_audio_features(track_ids)
 
-    # Batch fetch
-    genre_map = await fetch_artist_genres(session_id, artist_ids)
-    album_genre_map = await fetch_album_artists_genres(session_id, album_ids)
-    audio_map = await fetch_audio_features(track_ids)
 
-    # Attach to tracks
+def attach_enrichment(
+    tracks: list[dict],
+    genre_map: dict[str, list[str]],
+    album_genre_map: dict[str, list[str]],
+    audio_map: dict[str, dict],
+) -> list[dict]:
+    """Attach enrichment data to track dicts."""
     for track in tracks:
         all_genres: list[str] = []
         for artist in track.get("artists", []):

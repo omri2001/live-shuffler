@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fetchMe, setQueueSize as apiSetQueueSize, logout } from './api/spotify';
 import type { SpotifyUser } from './types/spotify';
 import { PlayerProvider } from './context/PlayerContext';
+import Toast from './components/Toast/Toast';
 import AppLayout from './components/Layout/AppLayout';
 import GenreCircles from './components/GenreCircles/GenreCircles';
 import PlayerBar from './components/PlayerBar/PlayerBar';
@@ -24,6 +25,8 @@ function AppContent() {
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [queueSize, setQueueSize] = useState(10);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' } | null>(null);
+  const showToast = useCallback((message: string, type: 'error' | 'info' = 'error') => setToast({ message, type }), []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -156,7 +159,16 @@ function AppContent() {
         <LibraryModal
           open={libraryOpen}
           onClose={() => setLibraryOpen(false)}
+          onError={showToast}
         />
+
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
       </AppLayout>
     </PlayerProvider>
   );
