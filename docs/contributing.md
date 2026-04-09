@@ -23,7 +23,11 @@
 |-------------------|-------------------------------------|
 | API endpoints     | `backend/app/routers/`              |
 | Scoring metrics   | `backend/app/services/scoring.py`   |
+| Metric YAML files | `backend/app/metrics/`              |
 | Queue logic       | `backend/app/services/queue.py`     |
+| Track fetching    | `backend/app/services/tracks.py`    |
+| Refine/inspect API| `backend/app/routers/refine.py`     |
 | UI components     | `frontend/src/components/`          |
+| Refine UI         | `frontend/src/components/Refine/`   |
 | Player state      | `frontend/src/context/PlayerContext.tsx` |
 | API client        | `frontend/src/api/spotify.ts`       |

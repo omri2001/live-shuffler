@@ -202,3 +202,34 @@ tempo:                           # List of tempo ranges, only the first matching
 ```
 
 For metrics that need custom logic beyond what YAML supports, you can use the `@scorer` decorator in `backend/app/services/scoring.py`.
+
+---
+
+## Tuning Metrics
+
+### Refine Tool
+
+The **Refine** button (top-right toolbar) opens an analysis tool for tuning metric configs:
+
+1. Select a metric and one or more playlists/albums
+2. Click **Analyze** — tracks are fetched, enriched, and scored with full breakdowns
+3. Review the results across four tabs:
+    - **Overview** — score histogram + summary stats
+    - **Genres** — genre frequency table highlighting which genres match the metric's keywords
+    - **Audio** — audio feature distributions with boosted features highlighted
+    - **Tracks** — per-track expandable breakdowns showing exactly how each score was calculated
+
+### Track Inspector
+
+Click **Inspect** next to "Song Metrics" in the left panel to inspect the currently playing track. This opens the Refine modal with two tabs:
+
+- **Profile** — all audio feature values as bars, tempo, loudness, and artist genres
+- **Scores** — every metric's score with expandable breakdowns
+
+Useful for understanding why a specific track scored high or low on a metric.
+
+### Re-score
+
+After editing a metric YAML, click **Re-score** in the queue panel header. This re-runs all scorers on every loaded track with the current configs and updates the cache. No need to reload your library.
+
+The score cache uses per-metric fingerprints — editing one YAML only invalidates that metric's cached scores on the next server restart.
