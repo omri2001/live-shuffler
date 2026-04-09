@@ -53,6 +53,7 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
   const [addingTotal, setAddingTotal] = useState(0);
   const cumulativeRef = useRef(0);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const loadedSources = new Set(state.sources);
 
@@ -145,6 +146,17 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
           </button>
         </div>
 
+        {/* Search */}
+        <div className="px-6 pt-3 pb-1">
+          <input
+            type="text"
+            placeholder="Search playlists, albums..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full bg-spotify-dark border border-spotify-dark-lighter rounded-lg px-3 py-2 text-sm text-spotify-white placeholder-spotify-gray focus:outline-none focus:border-spotify-green"
+          />
+        </div>
+
         {/* Tabs */}
         <div className="flex border-b border-spotify-dark-lighter px-6">
           {tabs.map(t => (
@@ -183,6 +195,7 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
           </div>
         )}
 
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
           {/* Active sources tab */}
@@ -194,7 +207,11 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {state.sources.map(key => {
+                {state.sources.filter(key => {
+                  if (!search) return true;
+                  const info = sourceLabel(key, playlists, albums);
+                  return info.name.toLowerCase().includes(search.toLowerCase());
+                }).map(key => {
                   const info = sourceLabel(key, playlists, albums);
                   return (
                     <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-spotify-dark-lighter/50">
@@ -243,7 +260,13 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
                 </div>
               </div>
               {loadedSources.has('liked') ? (
-                <span className="text-spotify-green text-sm">Added</span>
+                <button
+                  onClick={() => handleRemove('liked')}
+                  disabled={removing === 'liked'}
+                  className="px-3 py-1.5 rounded-full border border-red-500/50 text-red-400 text-xs font-semibold hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                >
+                  {removing === 'liked' ? 'Removing...' : 'Remove'}
+                </button>
               ) : (
                 <button
                   onClick={() => handleAdd('liked')}
@@ -263,7 +286,7 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {playlists.map(pl => {
+                {playlists.filter(pl => !search || pl.name.toLowerCase().includes(search.toLowerCase())).map(pl => {
                   const key = `playlist:${pl.id}`;
                   const img = pl.images?.[0]?.url;
                   return (
@@ -280,7 +303,13 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
                         </div>
                       </div>
                       {loadedSources.has(key) ? (
-                        <span className="text-spotify-green text-sm shrink-0 ml-3">Added</span>
+                        <button
+                          onClick={() => handleRemove(key)}
+                          disabled={removing === key}
+                          className="px-3 py-1.5 rounded-full border border-red-500/50 text-red-400 text-xs font-semibold hover:bg-red-500/10 transition-colors disabled:opacity-50 shrink-0 ml-3"
+                        >
+                          {removing === key ? 'Removing...' : 'Remove'}
+                        </button>
                       ) : (
                         <button
                           onClick={() => handleAdd('playlist', pl.id)}
@@ -304,7 +333,7 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {albums.map(al => {
+                {albums.filter(al => !search || al.name.toLowerCase().includes(search.toLowerCase()) || al.artists.some(a => a.name.toLowerCase().includes(search.toLowerCase()))).map(al => {
                   const key = `album:${al.id}`;
                   const img = al.images?.[0]?.url;
                   return (
@@ -321,7 +350,13 @@ export default function LibraryModal({ open, onClose, onError }: LibraryModalPro
                         </div>
                       </div>
                       {loadedSources.has(key) ? (
-                        <span className="text-spotify-green text-sm shrink-0 ml-3">Added</span>
+                        <button
+                          onClick={() => handleRemove(key)}
+                          disabled={removing === key}
+                          className="px-3 py-1.5 rounded-full border border-red-500/50 text-red-400 text-xs font-semibold hover:bg-red-500/10 transition-colors disabled:opacity-50 shrink-0 ml-3"
+                        >
+                          {removing === key ? 'Removing...' : 'Remove'}
+                        </button>
                       ) : (
                         <button
                           onClick={() => handleAdd('album', undefined, al.id)}

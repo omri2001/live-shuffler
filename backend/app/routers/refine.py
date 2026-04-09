@@ -46,20 +46,28 @@ async def inspect_track(request: Request, track_id: str):
     if not session_id:
         return Response(status_code=401)
 
-    # Try to find the track in the queue (already enriched)
+    # Try to find the track in the queue
     q = get_queue(session_id)
     track = None
     for t in q.all_tracks:
         if t["id"] == track_id:
             track = t
             break
+    if not track:
+        for t in q.tracks:
+            if t["id"] == track_id:
+                track = t
+                break
 
-    # If not in queue, fetch and enrich it
+    # If not in queue at all, fetch from Spotify
     if not track:
         resp = await spotify_request(session_id, "GET", f"/tracks/{track_id}")
         if resp.status_code != 200:
             return Response(status_code=404, content="Track not found")
         track = resp.json()
+
+    # Enrich if missing enrichment data (cached tracks only have _scores)
+    if not track.get("_artist_genres") or not track.get("_audio_features"):
         genre_map = await enrich_artist_genres(session_id, [track])
         audio_map = await enrich_audio_features([track])
         attach_enrichment([track], genre_map, {}, audio_map)
