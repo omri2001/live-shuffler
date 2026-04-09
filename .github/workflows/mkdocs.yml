@@ -1,0 +1,32 @@
+name: Deploy Docs
+
+on:
+  push:
+    paths:
+      - docs/**
+      - README.md
+    branches:
+      - master
+
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+
+      - name: Install dependencies
+        run: |
+          uv sync
+
+      - name: Deploy docs
+        run: |
+          uv run mkdocs gh-deploy --force
