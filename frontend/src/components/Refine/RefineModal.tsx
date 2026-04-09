@@ -149,11 +149,15 @@ export default function RefineModal({ open, onClose, inspectTrackId }: RefineMod
                 </svg>
               </button>
             )}
-            {inspectTrackId && inspection ? (
-              <div className="min-w-0">
-                <h2 className="text-lg font-bold text-spotify-white truncate">{inspection.name}</h2>
-                <p className="text-xs text-spotify-gray truncate">{inspection.artists.join(', ')} — {inspection.album}</p>
-              </div>
+            {inspectTrackId ? (
+              inspection ? (
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold text-spotify-white truncate">{inspection.name}</h2>
+                  <p className="text-xs text-spotify-gray truncate">{inspection.artists.join(', ')} — {inspection.album}</p>
+                </div>
+              ) : (
+                <h2 className="text-lg font-bold text-spotify-white">Inspect Track</h2>
+              )
             ) : (
               <h2 className="text-lg font-bold text-spotify-white">Refine Metrics</h2>
             )}

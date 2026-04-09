@@ -12,6 +12,8 @@ interface SettingsModalProps {
   onCircleLayoutChange: (layout: CircleLayout) => void;
   gridColumns: number;
   onGridColumnsChange: (cols: number) => void;
+  requestsEnabled: boolean;
+  onToggleRequests: () => void;
 }
 
 const LAYOUTS: { key: CircleLayout; label: string }[] = [
@@ -20,7 +22,7 @@ const LAYOUTS: { key: CircleLayout; label: string }[] = [
   { key: 'favorites', label: 'Picks' },
 ];
 
-export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMode, queueSize, onQueueSizeChange, circleLayout, onCircleLayoutChange, gridColumns, onGridColumnsChange }: SettingsModalProps) {
+export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMode, queueSize, onQueueSizeChange, circleLayout, onCircleLayoutChange, gridColumns, onGridColumnsChange, requestsEnabled, onToggleRequests }: SettingsModalProps) {
   useEffect(() => {
     if (!open) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -176,6 +178,20 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
               </div>
             </div>
           )}
+
+          {/* Song requests */}
+          <div className="flex items-center justify-between mt-5 pt-5 border-t border-spotify-dark-lighter">
+            <div>
+              <p className="text-sm font-medium text-spotify-white">Song requests</p>
+              <p className="text-xs text-spotify-gray mt-0.5">Let people suggest songs via QR code</p>
+            </div>
+            <button
+              onClick={onToggleRequests}
+              className={`relative w-11 h-6 rounded-full transition-colors ${requestsEnabled ? 'bg-spotify-green' : 'bg-spotify-dark-lighter'}`}
+            >
+              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${requestsEnabled ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

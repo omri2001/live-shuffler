@@ -373,3 +373,97 @@ export async function analyzeWithProgress(
     clearTimeout(timeout);
   }
 }
+
+// ── Suggestions API ──
+
+export interface SuggestionStatus {
+  enabled: boolean;
+  code: string;
+  count: number;
+}
+
+export interface SuggestionTrack {
+  id: string;
+  name: string;
+  artists: string[];
+  album: string;
+  image: string;
+  uri: string;
+}
+
+export interface SuggestionItem {
+  track_id: string;
+  track: SuggestionTrack;
+  count: number;
+  first_requested: number;
+  last_requested: number;
+}
+
+export async function suggestionsEnable(): Promise<SuggestionStatus> {
+  const res = await fetch('/api/suggestions/enable', { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to enable');
+  return res.json();
+}
+
+export async function suggestionsDisable(): Promise<SuggestionStatus> {
+  const res = await fetch('/api/suggestions/disable', { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to disable');
+  return res.json();
+}
+
+export async function suggestionsStatus(): Promise<SuggestionStatus> {
+  const res = await fetch('/api/suggestions/status');
+  if (!res.ok) throw new Error('Failed to fetch status');
+  return res.json();
+}
+
+export async function suggestionsList(): Promise<{ suggestions: SuggestionItem[] }> {
+  const res = await fetch('/api/suggestions/list');
+  if (!res.ok) throw new Error('Failed to fetch list');
+  return res.json();
+}
+
+export async function suggestionsAccept(trackId: string): Promise<{ queue: QueueState; remaining: number }> {
+  const res = await fetch(`/api/suggestions/accept/${trackId}`, { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to accept');
+  return res.json();
+}
+
+export async function suggestionsDismiss(trackId: string): Promise<{ remaining: number }> {
+  const res = await fetch(`/api/suggestions/dismiss/${trackId}`, { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to dismiss');
+  return res.json();
+}
+
+// Guest endpoints (no auth, use code)
+export async function suggestionsSearch(code: string, q: string): Promise<{ tracks: SuggestionTrack[] }> {
+  const res = await fetch(`/api/suggestions/search?code=${encodeURIComponent(code)}&q=${encodeURIComponent(q)}`);
+  if (!res.ok) throw new Error('Failed to search');
+  return res.json();
+}
+
+export async function suggestionsSubmit(code: string, trackId: string, track: SuggestionTrack): Promise<{ count: number }> {
+  const res = await fetch('/api/suggestions/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, track_id: trackId, track }),
+  });
+  if (!res.ok) throw new Error('Failed to submit');
+  return res.json();
+}
+
+export async function suggestionsUnvote(code: string, trackId: string): Promise<{ count: number }> {
+  const res = await fetch('/api/suggestions/unvote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, track_id: trackId }),
+  });
+  if (!res.ok) throw new Error('Failed to unvote');
+  return res.json();
+}
+
+export async function suggestionsPool(code: string): Promise<{ suggestions: SuggestionItem[] }> {
+  const res = await fetch(`/api/suggestions/pool?code=${encodeURIComponent(code)}`);
+  if (!res.ok) throw new Error('Failed to fetch pool');
+  return res.json();
+}

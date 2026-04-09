@@ -243,7 +243,7 @@ export default function GenreCircles({ layout, favoriteMetrics, onFavoriteMetric
   );
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pl-64 pr-80 pointer-events-none overflow-y-auto">
+    <div className="absolute inset-0 flex items-center justify-center pl-64 pr-80 pt-14 pointer-events-none overflow-y-auto">
       <div className="pointer-events-auto relative w-full max-w-3xl px-12 my-auto">
 
         {/* ── Carousel layout ── */}

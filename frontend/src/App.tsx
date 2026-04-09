@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fetchMe, setQueueSize as apiSetQueueSize, logout } from './api/spotify';
+import { fetchMe, setQueueSize as apiSetQueueSize, logout, suggestionsStatus, suggestionsEnable, suggestionsDisable } from './api/spotify';
 import type { SpotifyUser } from './types/spotify';
 import { PlayerProvider, usePlayer } from './context/PlayerContext';
 import Toast from './components/Toast/Toast';
@@ -14,6 +14,8 @@ import StatsModal from './components/Stats/StatsModal';
 import LibraryModal from './components/Library/LibraryModal';
 import LoginButton from './components/Auth/LoginButton';
 import RefineModal from './components/Refine/RefineModal';
+import SuggestionsModal from './components/Suggestions/SuggestionsModal';
+import SuggestPage from './components/Suggestions/SuggestPage';
 
 export type CircleLayout = 'carousel' | 'grid' | 'favorites';
 
@@ -53,6 +55,9 @@ function AppContent() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [refineOpen, setRefineOpen] = useState(false);
   const [inspectTrackId, setInspectTrackId] = useState<string | null>(null);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [suggestionsCount, setSuggestionsCount] = useState(0);
+  const [requestsEnabled, setRequestsEnabled] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [queueSize, setQueueSize] = useState(10);
@@ -81,6 +86,15 @@ function AppContent() {
     document.body.classList.toggle('light', !darkMode);
   }, [darkMode]);
 
+  // Poll suggestion count for badge
+  useEffect(() => {
+    if (!user) return;
+    const poll = () => suggestionsStatus().then(s => { setSuggestionsCount(s.count); setRequestsEnabled(s.enabled); }).catch(() => {});
+    poll();
+    const id = setInterval(poll, 10000);
+    return () => clearInterval(id);
+  }, [user]);
+
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-spotify-dark">
@@ -98,6 +112,25 @@ function AppContent() {
     <PlayerProvider authenticated={true}>
       <AppLayout>
         <MainContent layout={circleLayout} favoriteMetrics={favoriteMetrics} onFavoriteMetricsChange={(m) => { setFavoriteMetrics(m); localStorage.setItem('favoriteMetrics', JSON.stringify(m)); }} gridColumns={gridColumns} onInspect={(id) => { setInspectTrackId(id); setRefineOpen(true); }} />
+
+        {/* Top-left button — right of song metrics panel */}
+        <div className="absolute top-4 left-68 z-10 flex gap-2">
+          <button
+            onClick={() => setSuggestionsOpen(true)}
+            className="w-9 h-9 rounded-full bg-spotify-dark-lighter/80 flex items-center justify-center text-spotify-gray hover:text-spotify-white hover:bg-spotify-dark-lighter transition-colors relative"
+            title="Song Requests"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 4h12M3 8h8M3 12h10" />
+              <circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" />
+            </svg>
+            {suggestionsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-spotify-green text-black text-[9px] font-bold flex items-center justify-center">
+                {suggestionsCount > 9 ? '!' : suggestionsCount}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* Top-right buttons — left of queue */}
         <div className="absolute top-4 right-84 z-10 flex gap-2">
@@ -198,6 +231,17 @@ function AppContent() {
           onCircleLayoutChange={(l) => { setCircleLayout(l); localStorage.setItem('circleLayout', l); }}
           gridColumns={gridColumns}
           onGridColumnsChange={(c) => { setGridColumns(c); localStorage.setItem('gridColumns', String(c)); }}
+          requestsEnabled={requestsEnabled}
+          onToggleRequests={async () => {
+            if (requestsEnabled) {
+              await suggestionsDisable();
+              setRequestsEnabled(false);
+              setSuggestionsCount(0);
+            } else {
+              const s = await suggestionsEnable();
+              setRequestsEnabled(true);
+            }
+          }}
         />
 
         <StatsModal
@@ -217,6 +261,11 @@ function AppContent() {
           inspectTrackId={inspectTrackId}
         />
 
+        <SuggestionsModal
+          open={suggestionsOpen}
+          onClose={() => { setSuggestionsOpen(false); suggestionsStatus().then(s => setSuggestionsCount(s.count)).catch(() => {}); }}
+        />
+
         {toast && (
           <Toast
             message={toast.message}
@@ -230,6 +279,12 @@ function AppContent() {
 }
 
 export default function App() {
+  // Check for guest suggestion mode before anything else
+  const suggestCode = new URLSearchParams(window.location.search).get('suggest');
+  if (suggestCode) {
+    return <SuggestPage code={suggestCode} />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppContent />
