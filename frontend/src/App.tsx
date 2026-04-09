@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fetchMe, setQueueSize as apiSetQueueSize, logout } from './api/spotify';
 import type { SpotifyUser } from './types/spotify';
-import { PlayerProvider } from './context/PlayerContext';
+import { PlayerProvider, usePlayer } from './context/PlayerContext';
 import Toast from './components/Toast/Toast';
 import AppLayout from './components/Layout/AppLayout';
 import GenreCircles from './components/GenreCircles/GenreCircles';
@@ -13,6 +13,35 @@ import SettingsModal from './components/Settings/SettingsModal';
 import StatsModal from './components/Stats/StatsModal';
 import LibraryModal from './components/Library/LibraryModal';
 import LoginButton from './components/Auth/LoginButton';
+import RefineModal from './components/Refine/RefineModal';
+
+export type CircleLayout = 'carousel' | 'grid' | 'favorites';
+
+function MainContent({ layout, favoriteMetrics, onFavoriteMetricsChange, gridColumns, onInspect }: {
+  layout: CircleLayout;
+  favoriteMetrics: string[];
+  onFavoriteMetricsChange: (m: string[]) => void;
+  gridColumns: number;
+  onInspect: (trackId: string) => void;
+}) {
+  const { startupDone, startupMessage } = usePlayer();
+
+  if (!startupDone) {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-2 border-spotify-green border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-spotify-gray text-sm">{startupMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <TrackScores onInspect={onInspect} />
+      <GenreCircles layout={layout} favoriteMetrics={favoriteMetrics} onFavoriteMetricsChange={onFavoriteMetricsChange} gridColumns={gridColumns} />
+    </>
+  );
+}
 
 const queryClient = new QueryClient();
 
@@ -22,9 +51,16 @@ function AppContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [refineOpen, setRefineOpen] = useState(false);
+  const [inspectTrackId, setInspectTrackId] = useState<string | null>(null);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [queueSize, setQueueSize] = useState(10);
+  const [circleLayout, setCircleLayout] = useState<CircleLayout>(() => (localStorage.getItem('circleLayout') as CircleLayout) || 'carousel');
+  const [favoriteMetrics, setFavoriteMetrics] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('favoriteMetrics') || '[]'); } catch { return []; }
+  });
+  const [gridColumns, setGridColumns] = useState(() => Number(localStorage.getItem('gridColumns')) || 6);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' } | null>(null);
   const showToast = useCallback((message: string, type: 'error' | 'info' = 'error') => setToast({ message, type }), []);
 
@@ -61,8 +97,7 @@ function AppContent() {
   return (
     <PlayerProvider authenticated={true}>
       <AppLayout>
-        <TrackScores />
-        <GenreCircles />
+        <MainContent layout={circleLayout} favoriteMetrics={favoriteMetrics} onFavoriteMetricsChange={(m) => { setFavoriteMetrics(m); localStorage.setItem('favoriteMetrics', JSON.stringify(m)); }} gridColumns={gridColumns} onInspect={(id) => { setInspectTrackId(id); setRefineOpen(true); }} />
 
         {/* Top-right buttons — left of queue */}
         <div className="absolute top-4 right-84 z-10 flex gap-2">
@@ -84,6 +119,16 @@ function AppContent() {
               <rect x="2" y="10" width="3" height="6" rx="0.5" />
               <rect x="7.5" y="6" width="3" height="10" rx="0.5" />
               <rect x="13" y="2" width="3" height="14" rx="0.5" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setRefineOpen(true)}
+            className="w-9 h-9 rounded-full bg-spotify-dark-lighter/80 flex items-center justify-center text-spotify-gray hover:text-spotify-white hover:bg-spotify-dark-lighter transition-colors"
+            title="Refine Metrics"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 2v4M9 12v4M2 9h4M12 9h4" />
+              <circle cx="9" cy="9" r="3" />
             </svg>
           </button>
           <button
@@ -149,6 +194,10 @@ function AppContent() {
             setQueueSize(size);
             try { await apiSetQueueSize(size); } catch { /* ignore */ }
           }}
+          circleLayout={circleLayout}
+          onCircleLayoutChange={(l) => { setCircleLayout(l); localStorage.setItem('circleLayout', l); }}
+          gridColumns={gridColumns}
+          onGridColumnsChange={(c) => { setGridColumns(c); localStorage.setItem('gridColumns', String(c)); }}
         />
 
         <StatsModal
@@ -160,6 +209,12 @@ function AppContent() {
           open={libraryOpen}
           onClose={() => setLibraryOpen(false)}
           onError={showToast}
+        />
+
+        <RefineModal
+          open={refineOpen}
+          onClose={() => { setRefineOpen(false); setInspectTrackId(null); }}
+          inspectTrackId={inspectTrackId}
         />
 
         {toast && (

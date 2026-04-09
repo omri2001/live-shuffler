@@ -55,6 +55,15 @@ async def pause(request: Request):
     return Response(status_code=resp.status_code)
 
 
+@router.put("/player/seek")
+async def seek(request: Request, position_ms: int = 0):
+    session_id = get_session_id(request)
+    if not session_id:
+        return Response(status_code=401)
+    resp = await spotify_request(session_id, "PUT", f"/me/player/seek?position_ms={position_ms}")
+    return Response(status_code=resp.status_code)
+
+
 @router.post("/player/next")
 async def next_track(request: Request):
     session_id = get_session_id(request)

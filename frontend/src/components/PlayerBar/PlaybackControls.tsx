@@ -1,10 +1,11 @@
+import { useEffect, useCallback } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
 import * as api from '../../api/spotify';
 
 export default function PlaybackControls() {
   const { state, dispatch, refreshQueue } = usePlayer();
 
-  const handlePlayPause = async () => {
+  const handlePlayPause = useCallback(async () => {
     if (state.isPlaying) {
       await api.pause();
       dispatch({ type: 'TOGGLE_PLAY', isPlaying: false });
@@ -12,7 +13,21 @@ export default function PlaybackControls() {
       await api.play();
       dispatch({ type: 'TOGGLE_PLAY', isPlaying: true });
     }
-  };
+  }, [state.isPlaying, dispatch]);
+
+  // Global spacebar for play/pause
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+      // Don't intercept if user is typing in an input/select/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      e.preventDefault();
+      handlePlayPause();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [handlePlayPause]);
 
   const handleRestart = async () => {
     await api.queueRestart();

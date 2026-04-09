@@ -31,6 +31,10 @@ export async function play(uris?: string[]): Promise<void> {
   });
 }
 
+export async function seek(positionMs: number): Promise<void> {
+  await fetch(`/api/player/seek?position_ms=${Math.round(positionMs)}`, { method: 'PUT' });
+}
+
 export async function pause(): Promise<void> {
   await fetch('/api/player/pause', { method: 'PUT' });
 }
@@ -112,6 +116,22 @@ export async function fetchPlaylists(): Promise<{ items: { id: string; name: str
 export async function fetchAlbums(): Promise<{ items: { album: { id: string; name: string; images: { url: string }[]; artists: { name: string }[] } }[] }> {
   const res = await fetch('/api/albums');
   if (!res.ok) throw new Error('Failed to fetch albums');
+  return res.json();
+}
+
+export async function rescoreQueue(): Promise<QueueState> {
+  const res = await fetch('/api/queue/rescore', { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to rescore');
+  return res.json();
+}
+
+export async function syncCurrentTrack(trackId: string): Promise<QueueState> {
+  const res = await fetch('/api/queue/sync-current', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ track_id: trackId }),
+  });
+  if (!res.ok) throw new Error('Failed to sync current track');
   return res.json();
 }
 
@@ -213,4 +233,143 @@ export async function queueRerank(weights: Record<string, number>): Promise<Queu
   });
   if (!res.ok) throw new Error('Failed to rerank');
   return res.json();
+}
+
+// ── Refine API ──
+
+export interface TrackInspection {
+  track_id: string;
+  name: string;
+  artists: string[];
+  album: string;
+  artist_genres: string[];
+  album_genres: string[];
+  audio_features: Record<string, number>;
+  breakdowns: Record<string, {
+    score: number;
+    base_score: number;
+    base_reason: string | null;
+    matched_genres: string[];
+    subgenre_bonus: number;
+    audio_boosts: { feature: string; value: number; contribution: number }[];
+    tempo_bonus: number;
+    tempo: number;
+  }>;
+}
+
+export async function inspectTrack(trackId: string): Promise<TrackInspection> {
+  const res = await fetch(`/api/refine/inspect/${trackId}`);
+  if (!res.ok) throw new Error('Failed to inspect track');
+  return res.json();
+}
+
+export interface MetricFullConfig {
+  color: string;
+  type: string;
+  genres?: { primary: string[]; artist_score: number; album_score: number };
+  subgenres?: { keywords: string[]; bonus: number };
+  audio_boosts?: { feature: string; weight: number; invert?: boolean }[];
+  tempo?: { min?: number; max?: number; bonus: number }[];
+  text_regex?: string;
+  genre_keywords?: string[];
+}
+
+export interface RefineTrackResult {
+  id: string;
+  name: string;
+  artists: string[];
+  album: string;
+  album_image: string;
+  score: number;
+  breakdown: {
+    score: number;
+    base_score: number;
+    base_reason: string | null;
+    matched_genres: string[];
+    subgenre_bonus: number;
+    audio_boosts: { feature: string; value: number; contribution: number }[];
+    tempo_bonus: number;
+    tempo: number;
+  };
+  artist_genres: string[];
+  album_genres: string[];
+  audio_features: Record<string, number>;
+}
+
+export interface RefineAnalysis {
+  metric_name: string;
+  metric_config: MetricFullConfig;
+  track_count: number;
+  score_histogram: Record<string, number>;
+  genre_frequencies: { genre: string; count: number; match_type: string | null }[];
+  audio_features: Record<string, {
+    histogram: Record<string, number>;
+    mean: number;
+    median: number;
+    boosted: boolean;
+    weight: number;
+    invert: boolean;
+  }>;
+  tempo: {
+    histogram: Record<string, number>;
+    mean: number;
+    median: number;
+    ranges: { min?: number; max?: number; bonus: number }[];
+  };
+  tracks: RefineTrackResult[];
+}
+
+export interface RefineProgress {
+  step: string;
+  progress?: number;
+  total?: number;
+  message: string;
+  analysis?: RefineAnalysis;
+}
+
+export async function fetchMetricFullConfigs(): Promise<Record<string, MetricFullConfig>> {
+  const res = await fetch('/api/refine/metrics');
+  if (!res.ok) throw new Error('Failed to fetch metric configs');
+  return res.json();
+}
+
+export async function analyzeWithProgress(
+  metric: string,
+  sources: { source: string; playlist_id?: string; album_id?: string }[],
+  onProgress: (p: RefineProgress) => void,
+): Promise<void> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 300_000);
+  try {
+    const res = await fetch('/api/refine/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ metric, sources }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error('Failed to analyze');
+
+    const reader = res.body?.getReader();
+    if (!reader) return;
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            onProgress(JSON.parse(line.slice(6)));
+          } catch { /* ignore */ }
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
 }

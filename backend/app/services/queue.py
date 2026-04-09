@@ -203,6 +203,26 @@ class QueueState:
             random.shuffle(available)
             self.tracks.extend(available[:needed])
 
+    def sync_current_track(self, playing_id: str) -> None:
+        """If the given track ID is in the library, move it to the front of the queue."""
+        # Check if it's already at the front
+        if self.tracks and self.tracks[0]["id"] == playing_id:
+            return
+        # Find in current queue and move to front
+        for i, t in enumerate(self.tracks):
+            if t["id"] == playing_id:
+                self.tracks.insert(0, self.tracks.pop(i))
+                self.current_index = 0
+                return
+        # Not in queue but in library — insert at front
+        for t in self.all_tracks:
+            if t["id"] == playing_id:
+                self.tracks.insert(0, t)
+                if len(self.tracks) > self.queue_size:
+                    self.tracks = self.tracks[:self.queue_size]
+                self.current_index = 0
+                return
+
     def skip(self) -> dict | None:
         """Remove current (first) song, advance to next, refill to keep self.queue_size."""
         if not self.tracks:

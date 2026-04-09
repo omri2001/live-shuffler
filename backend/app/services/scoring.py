@@ -204,3 +204,140 @@ def _load_metrics_from_yaml():
 
 
 _load_metrics_from_yaml()
+
+
+# ---------------------------------------------------------------------------
+# Full config access (for refine tools)
+# ---------------------------------------------------------------------------
+
+def get_metric_full_configs() -> dict[str, dict]:
+    """Return full YAML config for all metrics."""
+    configs: dict[str, dict] = {}
+    if _METRICS_DIR.is_dir():
+        for yml_path in sorted(_METRICS_DIR.glob("*.yml")):
+            with open(yml_path) as f:
+                configs[yml_path.stem] = yaml.safe_load(f)
+    return configs
+
+
+def score_track_with_breakdown(track: dict, metric_name: str) -> dict:
+    """Score a track against a single metric, returning a detailed breakdown."""
+    configs = get_metric_full_configs()
+    cfg = configs.get(metric_name)
+    if not cfg:
+        return {"score": 0, "base_score": 0, "base_reason": None, "matched_genres": [],
+                "subgenre_bonus": 0, "audio_boosts": [], "tempo_bonus": 0, "tempo": 0}
+
+    data = TrackData(
+        track=track,
+        artist_genres=[g.lower() for g in track.get("_artist_genres", [])],
+        album_genres=[g.lower() for g in track.get("_album_genres", [])],
+        audio_features=track.get("_audio_features", {}),
+    )
+    metric_type = cfg.get("type", "graduated")
+
+    if metric_type == "binary":
+        return _score_binary_with_breakdown(cfg, data)
+
+    # Graduated scoring with breakdown
+    genres_cfg = cfg.get("genres", {})
+    primary = tuple(genres_cfg.get("primary", []))
+    artist_score_val = genres_cfg.get("artist_score", 75)
+    album_score_val = genres_cfg.get("album_score", 60)
+
+    sub_cfg = cfg.get("subgenres", {})
+    subgenre_keywords = tuple(sub_cfg.get("keywords", []))
+    subgenre_bonus_val = sub_cfg.get("bonus", 10)
+
+    audio_boosts_cfg = cfg.get("audio_boosts", [])
+    tempo_ranges = cfg.get("tempo", [])
+    af = data["audio_features"]
+
+    base_score = 0
+    base_reason = None
+    matched_genres: list[str] = []
+
+    if primary:
+        matched_primary = [g for g in data["artist_genres"] if any(kw in g for kw in primary)]
+        matched_album = [g for g in data["album_genres"] if any(kw in g for kw in primary)]
+        if matched_primary:
+            base_score = artist_score_val
+            base_reason = "artist_genre_match"
+            matched_genres.extend(matched_primary)
+        elif matched_album:
+            base_score = album_score_val
+            base_reason = "album_genre_match"
+            matched_genres.extend(matched_album)
+
+    subgenre_bonus = 0
+    if subgenre_keywords:
+        all_genres = data["artist_genres"] + data["album_genres"]
+        matched_sub = [g for g in all_genres if any(kw in g for kw in subgenre_keywords)]
+        if matched_sub:
+            subgenre_bonus = subgenre_bonus_val
+            matched_genres.extend(matched_sub)
+
+    matched_genres = list(dict.fromkeys(matched_genres))
+
+    audio_boost_details = []
+    for boost in audio_boosts_cfg:
+        val = af.get(boost["feature"], 0)
+        effective = 1 - val if boost.get("invert") else val
+        contribution = int(boost["weight"] * effective)
+        audio_boost_details.append({
+            "feature": boost["feature"],
+            "value": round(val, 3),
+            "contribution": contribution,
+        })
+
+    tempo_bonus = 0
+    tempo = af.get("tempo", 0)
+    for tr in tempo_ranges:
+        t_min = tr.get("min", 0)
+        t_max = tr.get("max", float("inf"))
+        if t_min <= tempo <= t_max:
+            tempo_bonus = tr["bonus"]
+            break
+
+    total = base_score + subgenre_bonus + sum(b["contribution"] for b in audio_boost_details) + tempo_bonus
+    total = max(0, min(100, total))
+
+    return {
+        "score": total,
+        "base_score": base_score,
+        "base_reason": base_reason,
+        "matched_genres": matched_genres,
+        "subgenre_bonus": subgenre_bonus,
+        "audio_boosts": audio_boost_details,
+        "tempo_bonus": tempo_bonus,
+        "tempo": round(tempo, 1),
+    }
+
+
+def _score_binary_with_breakdown(cfg: dict, data: TrackData) -> dict:
+    """Breakdown for binary scorers."""
+    pattern = re.compile(cfg["text_regex"]) if "text_regex" in cfg else None
+    keywords = tuple(cfg.get("genre_keywords", []))
+
+    base_reason = None
+    matched: list[str] = []
+
+    if pattern and _text_matches(data["track"], pattern):
+        base_reason = "text_match"
+    elif keywords:
+        for kw in keywords:
+            if _genre_contains(data["artist_genres"], kw) or _genre_contains(data["album_genres"], kw):
+                base_reason = "genre_keyword_match"
+                matched.append(kw)
+
+    score = 100 if base_reason else 0
+    return {
+        "score": score,
+        "base_score": score,
+        "base_reason": base_reason,
+        "matched_genres": matched,
+        "subgenre_bonus": 0,
+        "audio_boosts": [],
+        "tempo_bonus": 0,
+        "tempo": data["audio_features"].get("tempo", 0),
+    }

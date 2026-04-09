@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
+import { seek } from '../../api/spotify';
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -9,9 +11,19 @@ function formatTime(ms: number): string {
 
 export default function ProgressSlider() {
   const { state, dispatch } = usePlayer();
+  const seekingRef = useRef(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    seekingRef.current = true;
     dispatch({ type: 'SET_PROGRESS', progressMs: Number(e.target.value) });
+  };
+
+  const handleRelease = async (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
+    if (!seekingRef.current) return;
+    seekingRef.current = false;
+    const positionMs = Number((e.target as HTMLInputElement).value);
+    dispatch({ type: 'SET_PROGRESS', progressMs: positionMs });
+    await seek(positionMs);
   };
 
   const progress = state.durationMs > 0 ? (state.progressMs / state.durationMs) * 100 : 0;
@@ -28,6 +40,8 @@ export default function ProgressSlider() {
           max={state.durationMs}
           value={state.progressMs}
           onChange={handleChange}
+          onMouseUp={handleRelease}
+          onTouchEnd={handleRelease}
           className="w-full h-1 appearance-none bg-transparent cursor-pointer relative z-10
             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
             [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-spotify-white

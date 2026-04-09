@@ -8,6 +8,7 @@ from app.services.spotify import sessions, spotify_request
 from app.services.metadata import enrich_artist_genres, enrich_album_genres, enrich_audio_features, attach_enrichment
 from app.services.scoring import score_track, get_scorer_names, get_metric_configs
 from app.services.score_cache import get_cached_scores, set_cached_scores_bulk
+from app.services.tracks import fetch_tracks_for_source
 
 router = APIRouter()
 
@@ -46,6 +47,10 @@ class AddTracksBody(BaseModel):
     source: str = "liked"  # "liked", "playlist", "album"
     playlist_id: str | None = None
     album_id: str | None = None
+
+
+class SyncCurrentBody(BaseModel):
+    track_id: str
 
 
 class QueueSizeBody(BaseModel):
@@ -93,63 +98,6 @@ async def get_queue_stats(request: Request):
     return {"total": len(unplayed), "metrics": metrics}
 
 
-async def _fetch_tracks_for_source(
-    session_id: str, source: str, playlist_id: str | None, album_id: str | None
-) -> tuple[str, list[dict]]:
-    """Fetch tracks for a given source. Returns (source_key, tracks)."""
-    tracks: list[dict] = []
-
-    if source == "liked":
-        offset = 0
-        while True:
-            resp = await spotify_request(session_id, "GET", f"/me/tracks?offset={offset}&limit=50")
-            if resp.status_code != 200:
-                break
-            data = resp.json()
-            items = data.get("items", [])
-            if not items:
-                break
-            tracks.extend(item["track"] for item in items if item.get("track"))
-            offset += 50
-            if offset >= data.get("total", 0):
-                break
-        return "liked", tracks
-
-    elif source == "playlist" and playlist_id:
-        offset = 0
-        while True:
-            resp = await spotify_request(session_id, "GET", f"/playlists/{playlist_id}/tracks?offset={offset}&limit=100")
-            if resp.status_code != 200:
-                break
-            data = resp.json()
-            items = data.get("items", [])
-            if not items:
-                break
-            tracks.extend(item["track"] for item in items if item.get("track") and item["track"].get("id"))
-            offset += 100
-            if offset >= data.get("total", 0):
-                break
-        return f"playlist:{playlist_id}", tracks
-
-    elif source == "album" and album_id:
-        # Album track items are simplified — fetch full track objects via /tracks endpoint
-        resp = await spotify_request(session_id, "GET", f"/albums/{album_id}")
-        if resp.status_code == 200:
-            album_data = resp.json()
-            track_ids = [item["id"] for item in album_data.get("tracks", {}).get("items", []) if item.get("id")]
-            # Fetch full track objects in batches of 50
-            for i in range(0, len(track_ids), 50):
-                batch = track_ids[i:i+50]
-                ids_param = ",".join(batch)
-                tresp = await spotify_request(session_id, "GET", f"/tracks?ids={ids_param}")
-                if tresp.status_code == 200:
-                    for t in tresp.json().get("tracks", []):
-                        if t and t.get("id"):
-                            tracks.append(t)
-        return f"album:{album_id}", tracks
-
-    return "", []
-
 
 def _sse_event(data: dict) -> str:
     return f"data: {json.dumps(data)}\n\n"
@@ -166,7 +114,7 @@ async def add_to_queue(request: Request, body: AddTracksBody):
     async def generate():
         yield _sse_event({"step": "fetching", "progress": 0, "total": 0, "message": "Fetching tracks..."})
 
-        source_key, tracks = await _fetch_tracks_for_source(
+        source_key, tracks = await fetch_tracks_for_source(
             session_id, body.source, body.playlist_id, body.album_id
         )
 
@@ -223,14 +171,105 @@ async def add_to_queue(request: Request, body: AddTracksBody):
 
         if was_empty:
             q.rerank({})
-            if q.current_track:
-                await _play_track(session_id, q.current_track["uri"])
+            # If Spotify has a track loaded, put it at the front of the queue
+            playback = await spotify_request(session_id, "GET", "/me/player")
+            if playback.status_code == 200:
+                pb = playback.json()
+                playing_item = pb.get("item")
+                if playing_item and playing_item.get("id"):
+                    playing_id = playing_item["id"]
+                    q.sync_current_track(playing_id)
+                    # If track wasn't in the library, enrich, score, and insert it
+                    if not q.tracks or q.tracks[0]["id"] != playing_id:
+                        cached = get_cached_scores(playing_id)
+                        if cached:
+                            playing_item["_scores"] = cached
+                        else:
+                            genre_map = await enrich_artist_genres(session_id, [playing_item])
+                            audio_map = await enrich_audio_features([playing_item])
+                            [playing_item] = attach_enrichment([playing_item], genre_map, {}, audio_map)
+                            playing_item["_scores"] = score_track(playing_item)
+                            set_cached_scores_bulk({playing_id: playing_item["_scores"]})
+                        q.tracks.insert(0, playing_item)
+                        if len(q.tracks) > q.queue_size:
+                            q.tracks = q.tracks[:q.queue_size]
+                        q.current_index = 0
         else:
             q._refill()
 
         yield _sse_event({"step": "done", "message": f"Added {total} tracks", "queue": q.to_dict()})
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+@router.post("/rescore")
+async def rescore(request: Request):
+    """Re-score all tracks in the queue with current metric configs."""
+    session_id = get_session_id(request)
+    if not session_id:
+        return Response(status_code=401)
+
+    q = get_queue(session_id)
+    if not q.all_tracks:
+        return Response(status_code=400, content="No library loaded")
+
+    # Re-score every track and update cache
+    new_scores: dict[str, dict[str, int]] = {}
+    for track in q.all_tracks:
+        scores = score_track(track)
+        track["_scores"] = scores
+        new_scores[track["id"]] = scores
+
+    # Also update tracks in the active queue
+    all_by_id = {t["id"]: t for t in q.all_tracks}
+    for i, track in enumerate(q.tracks):
+        if track["id"] in all_by_id:
+            q.tracks[i] = all_by_id[track["id"]]
+
+    set_cached_scores_bulk(new_scores)
+    return q.to_dict()
+
+
+@router.post("/sync-current")
+async def sync_current(request: Request, body: SyncCurrentBody):
+    """Sync the queue's current track with what Spotify is actually playing."""
+    session_id = get_session_id(request)
+    if not session_id:
+        return Response(status_code=401)
+
+    q = get_queue(session_id)
+    track_id = body.track_id
+
+    # Already at front — nothing to do
+    if q.tracks and q.tracks[0]["id"] == track_id:
+        return q.to_dict()
+
+    # Try to find in queue or library and move to front
+    q.sync_current_track(track_id)
+    if q.tracks and q.tracks[0]["id"] == track_id:
+        return q.to_dict()
+
+    # Not in library — fetch from Spotify, enrich, score, insert
+    resp = await spotify_request(session_id, "GET", f"/tracks/{track_id}")
+    if resp.status_code != 200:
+        return Response(status_code=404, content="Track not found")
+    track = resp.json()
+
+    cached = get_cached_scores(track_id)
+    if cached:
+        track["_scores"] = cached
+    else:
+        genre_map = await enrich_artist_genres(session_id, [track])
+        audio_map = await enrich_audio_features([track])
+        [track] = attach_enrichment([track], genre_map, {}, audio_map)
+        track["_scores"] = score_track(track)
+        set_cached_scores_bulk({track_id: track["_scores"]})
+
+    q.tracks.insert(0, track)
+    if len(q.tracks) > q.queue_size:
+        q.tracks = q.tracks[:q.queue_size]
+    q.current_index = 0
+    return q.to_dict()
 
 
 class RerankBody(BaseModel):
@@ -304,7 +343,8 @@ async def shuffle_random(request: Request):
     q.current_index = 0 if q.tracks else -1
     q.last_weights = {}
 
-    if q.current_track:
+    # Only start playback if the current track changed
+    if q.current_track and (not current_id or q.current_track["id"] != current_id):
         await _play_track(session_id, q.current_track["uri"])
 
     return q.to_dict()

@@ -21,15 +21,16 @@ export default function QueuePanel() {
     await refreshQueue();
   };
 
+  const handleRescore = async () => {
+    await api.rescoreQueue();
+    await refreshQueue();
+  };
+
   if (state.queue.length === 0) {
     return (
       <div className="absolute right-0 top-0 bottom-20 w-80 bg-spotify-dark-light border-l border-spotify-dark-lighter flex flex-col items-center justify-center p-4">
-        {(
-          <>
-            <p className="text-spotify-gray text-sm mb-2">Queue is empty</p>
-            <p className="text-spotify-gray text-xs">Open the library to add songs</p>
-          </>
-        )}
+        <p className="text-spotify-gray text-sm mb-2">Queue is empty</p>
+        <p className="text-spotify-gray text-xs">Open the library to add songs</p>
       </div>
     );
   }
@@ -39,13 +40,22 @@ export default function QueuePanel() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-spotify-dark-lighter">
         <h2 className="text-sm font-bold text-spotify-white">Queue</h2>
-        <button
-          onClick={handleShuffle}
-          className="text-xs text-spotify-gray hover:text-spotify-white transition-colors"
-          title="Shuffle remaining"
-        >
-          Shuffle
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRescore}
+            className="text-xs text-spotify-gray hover:text-spotify-white transition-colors"
+            title="Re-score all tracks with current metric configs"
+          >
+            Re-score
+          </button>
+          <button
+            onClick={handleShuffle}
+            className="text-xs text-spotify-gray hover:text-spotify-white transition-colors"
+            title="Shuffle remaining"
+          >
+            Shuffle
+          </button>
+        </div>
       </div>
 
       {/* Track list */}

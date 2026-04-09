@@ -1,44 +1,45 @@
 """Persistent cache for track scores. Stored as JSON file.
 
-Automatically invalidates when scorers change (names or logic)."""
+Each metric has its own fingerprint based on its YAML content.
+When a metric YAML changes, only that metric's cached scores are invalidated."""
 
 from __future__ import annotations
 
 import hashlib
-import inspect
 import json
 from pathlib import Path
 
-from app.services.scoring import get_scorer_names, SCORERS
+from app.services.scoring import SCORERS
 
 _CACHE_FILE = Path(__file__).resolve().parent.parent / "_score_cache.json"
-_cache: dict[str, dict[str, int]] = {}
-
-
 _METRICS_DIR = Path(__file__).resolve().parent.parent / "metrics"
 
+# Cache structure: {track_id: {metric_name: score}}
+_cache: dict[str, dict[str, int]] = {}
+# Per-metric fingerprints at load time
+_loaded_fingerprints: dict[str, str] = {}
 
-def _scorer_fingerprint() -> str:
-    """Hash of scorer names + metrics YAML content + custom scorer source code.
-    Changes when any metric config or custom scorer is added/removed/modified."""
-    h = hashlib.md5()
-    # Include all YAML metric files
+
+def _metric_fingerprint(metric_name: str) -> str:
+    """Hash a single metric's YAML content."""
+    yml_path = _METRICS_DIR / f"{metric_name}.yml"
+    if yml_path.exists():
+        return hashlib.md5(yml_path.read_bytes()).hexdigest()
+    return ""
+
+
+def _all_metric_fingerprints() -> dict[str, str]:
+    """Return {metric_name: fingerprint} for all current metrics."""
+    fps: dict[str, str] = {}
     if _METRICS_DIR.is_dir():
         for yml_path in sorted(_METRICS_DIR.glob("*.yml")):
-            h.update(yml_path.name.encode())
-            h.update(yml_path.read_bytes())
-    # Include custom (non-YAML) scorer source
-    for name in sorted(SCORERS.keys()):
-        h.update(name.encode())
-        try:
-            h.update(inspect.getsource(SCORERS[name]).encode())
-        except OSError:
-            pass  # YAML-generated closures don't have inspectable source
-    return h.hexdigest()
+            name = yml_path.stem
+            fps[name] = hashlib.md5(yml_path.read_bytes()).hexdigest()
+    return fps
 
 
 def _load():
-    global _cache
+    global _cache, _loaded_fingerprints
     if not _CACHE_FILE.exists():
         return
 
@@ -48,19 +49,31 @@ def _load():
         _cache = {}
         return
 
-    # Cache format: {"_fingerprint": "...", "scores": {track_id: {name: score}}}
-    if raw.get("_fingerprint") != _scorer_fingerprint():
-        _cache = {}
-        _CACHE_FILE.unlink(missing_ok=True)
+    saved_fps = raw.get("_fingerprints", {})
+    current_fps = _all_metric_fingerprints()
+    _loaded_fingerprints = current_fps
+
+    # Find which metrics changed
+    changed_metrics = set()
+    for name in set(list(saved_fps.keys()) + list(current_fps.keys())):
+        if saved_fps.get(name) != current_fps.get(name):
+            changed_metrics.add(name)
+
+    scores = raw.get("scores", {})
+
+    if not changed_metrics:
+        _cache = scores
         return
 
-    _cache = raw.get("scores", {})
+    # Strip changed metrics from cached scores
+    for track_id, track_scores in scores.items():
+        _cache[track_id] = {m: s for m, s in track_scores.items() if m not in changed_metrics}
 
 
 def _save():
     try:
         data = {
-            "_fingerprint": _scorer_fingerprint(),
+            "_fingerprints": _all_metric_fingerprints(),
             "scores": _cache,
         }
         _CACHE_FILE.write_text(json.dumps(data))
@@ -73,7 +86,13 @@ _load()
 
 
 def get_cached_scores(track_id: str) -> dict[str, int] | None:
-    return _cache.get(track_id)
+    cached = _cache.get(track_id)
+    if not cached:
+        return None
+    # Only return if we have scores for ALL current scorers
+    if set(SCORERS.keys()) - set(cached.keys()):
+        return None
+    return cached
 
 
 def set_cached_scores(track_id: str, scores: dict[str, int]) -> None:

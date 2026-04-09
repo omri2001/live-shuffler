@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { usePlayer } from '../../context/PlayerContext';
 import { fetchMetricConfigs, type MetricConfig } from '../../api/spotify';
 
-export default function TrackScores() {
+interface TrackScoresProps {
+  onInspect?: (trackId: string) => void;
+}
+
+export default function TrackScores({ onInspect }: TrackScoresProps) {
   const { state } = usePlayer();
   const scores = state.currentTrack?._scores;
   const [configs, setConfigs] = useState<Record<string, MetricConfig>>({});
@@ -15,8 +19,16 @@ export default function TrackScores() {
 
   return (
     <div className="absolute left-0 top-0 bottom-20 w-64 bg-spotify-dark-light border-r border-spotify-dark-lighter flex flex-col">
-      <div className="px-4 py-3 border-b border-spotify-dark-lighter shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-spotify-dark-lighter shrink-0">
         <h2 className="text-sm font-bold text-spotify-white">Song Metrics</h2>
+        {state.currentTrack && onInspect && (
+          <button
+            onClick={() => onInspect(state.currentTrack!.id)}
+            className="text-xs text-spotify-gray hover:text-spotify-white transition-colors"
+          >
+            Inspect
+          </button>
+        )}
       </div>
 
       {!state.currentTrack ? (
