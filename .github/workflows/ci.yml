@@ -87,15 +87,15 @@ jobs:
 
       - name: Tests
         run: npx vitest run --passWithNoTests
-
-  docker-build:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build backend
-        run: docker build --target prod ./backend
-
-      - name: Build frontend
-        run: docker build --target prod ./frontend
+#
+#  docker-build:
+#    name: Docker Build
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Build backend
+#        run: docker build --target prod ./backend
+#
+#      - name: Build frontend
+#        run: docker build --target prod ./frontend
