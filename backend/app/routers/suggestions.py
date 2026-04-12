@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
 from app.services.queue import get_queue
-from app.services.spotify import get_user_id, sessions, spotify_request
+from app.services.spotify import sessions, spotify_request
 from app.services.suggestions import disable_pool, enable_pool, get_pool, get_pool_by_code
 
 router = APIRouter()
@@ -86,7 +86,7 @@ async def accept(request: Request, track_id: str):
         set_cached_scores_bulk({track_id: track["_scores"]})
 
     # Insert as "next up" (after the currently playing track)
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     insert_at = min(1, len(q.tracks))  # after current, or at 0 if queue is empty
     q.tracks.insert(insert_at, track)
     if len(q.tracks) > q.queue_size:

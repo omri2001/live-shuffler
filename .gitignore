@@ -23,6 +23,7 @@ site/
 # Backend runtime files
 backend/app/_sessions.json
 backend/app/_score_cache.json
+backend/app/_queues.json
 backend/certs/
 
 # OS

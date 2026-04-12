@@ -8,7 +8,7 @@ from app.services.metadata import attach_enrichment, enrich_artist_genres, enric
 from app.services.queue import get_queue, mark_dirty
 from app.services.score_cache import get_cached_scores, set_cached_scores_bulk
 from app.services.scoring import get_metric_configs, score_track
-from app.services.spotify import get_user_id, sessions, spotify_request
+from app.services.spotify import sessions, spotify_request
 from app.services.tracks import fetch_tracks_for_source
 
 router = APIRouter()
@@ -65,7 +65,7 @@ async def get_queue_state(request: Request):
     session_id = get_session_id(request)
     if not session_id:
         return Response(status_code=401)
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     return q.to_dict()
 
 
@@ -75,7 +75,7 @@ async def get_queue_snapshot(request: Request):
     session_id = get_session_id(request)
     if not session_id:
         return Response(status_code=401)
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     return q.snapshot()
 
 
@@ -85,7 +85,7 @@ async def get_queue_stats(request: Request):
     session_id = get_session_id(request)
     if not session_id:
         return Response(status_code=401)
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
 
     unplayed = [t for t in q.all_tracks if t["id"] not in q.played]
     # Collect distributions: {metric: {bucket_label: count}}
@@ -121,7 +121,7 @@ async def add_to_queue(request: Request, body: AddTracksBody):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
 
     async def generate():
         yield _sse_event({"step": "fetching", "progress": 0, "total": 0, "message": "Fetching tracks..."})
@@ -223,7 +223,7 @@ async def rescore(request: Request):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     if not q.all_tracks:
         return Response(status_code=400, content="No library loaded")
 
@@ -252,7 +252,7 @@ async def sync_current(request: Request, body: SyncCurrentBody):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     track_id = body.track_id
 
     # Already at front — nothing to do
@@ -298,7 +298,7 @@ async def rerank(request: Request, body: RerankBody):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     if not q.all_tracks:
         return Response(status_code=400, content="No library loaded")
 
@@ -323,7 +323,7 @@ async def remove_source(request: Request, body: RemoveSourceBody):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     q.remove_source(body.source_key)
     mark_dirty()
 
@@ -343,7 +343,7 @@ async def shuffle_random(request: Request):
 
     import random
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     if not q.all_tracks:
         return Response(status_code=400, content="No library loaded")
 
@@ -375,7 +375,7 @@ async def set_queue_size(request: Request, body: QueueSizeBody):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     q.queue_size = max(1, min(50, body.size))
 
     # Resize: trim or refill
@@ -394,7 +394,7 @@ async def skip(request: Request):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     track = q.skip()
     if track:
         mark_dirty()
@@ -409,7 +409,7 @@ async def previous(request: Request):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     track = q.previous()
     if track:
         await _play_track(session_id, track["uri"])
@@ -423,7 +423,7 @@ async def jump(request: Request, index: int):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     track = q.jump(index)
     if track:
         mark_dirty()
@@ -439,7 +439,7 @@ async def restart(request: Request):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     if q.current_track:
         await spotify_request(session_id, "PUT", "/me/player/seek?position_ms=0")
         return q.to_dict()
@@ -452,7 +452,7 @@ async def shuffle(request: Request):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     q.shuffle()
     mark_dirty()
     return q.to_dict()
@@ -464,7 +464,7 @@ async def remove_from_queue(request: Request, index: int):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     removed = q.remove_track(index)
     if removed is None:
         return Response(status_code=404, content="Invalid index")
@@ -483,7 +483,7 @@ async def clear_queue(request: Request):
     if not session_id:
         return Response(status_code=401)
 
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     q.clear()
     mark_dirty()
     await spotify_request(session_id, "PUT", "/me/player/pause")

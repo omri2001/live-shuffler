@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from app.services.metadata import attach_enrichment, enrich_artist_genres, enrich_audio_features
 from app.services.queue import get_queue
 from app.services.scoring import SCORERS, get_metric_full_configs, score_track_with_breakdown
-from app.services.spotify import get_user_id, sessions, spotify_request
+from app.services.spotify import sessions, spotify_request
 from app.services.tracks import fetch_tracks_for_source
 
 router = APIRouter()
@@ -58,7 +58,7 @@ async def inspect_track(request: Request, track_id: str):
         return Response(status_code=401)
 
     # Try to find the track in the queue
-    q = get_queue(get_user_id(session_id))
+    q = get_queue(session_id)
     track = None
     for t in q.all_tracks:
         if t["id"] == track_id:

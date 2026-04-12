@@ -54,12 +54,12 @@ def add_session(session_id: str, data: dict) -> None:
     _schedule_save()
 
 
-def get_user_id(session_id: str) -> str:
-    """Get the Spotify user ID for a session. Falls back to session_id."""
-    session = sessions.get(session_id)
-    if session:
-        return session.get("user_id", session_id)
-    return session_id
+def find_session_by_user(user_id: str) -> str | None:
+    """Find an existing session_id for a Spotify user."""
+    for sid, data in sessions.items():
+        if data.get("user_id") == user_id:
+            return sid
+    return None
 
 
 async def refresh_token_if_needed(session_id: str) -> str | None:

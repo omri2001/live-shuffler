@@ -15,7 +15,7 @@ from app.config import (
     SPOTIFY_REDIRECT_URI,
     SPOTIFY_TOKEN_URL,
 )
-from app.services.spotify import add_session, sessions
+from app.services.spotify import add_session, find_session_by_user, sessions
 
 router = APIRouter()
 
@@ -62,7 +62,10 @@ async def callback(code: str):
         )
     spotify_user_id = me_resp.json().get("id", "") if me_resp.status_code == 200 else ""
 
-    session_id = secrets.token_urlsafe(32)
+    # Reuse existing session for the same Spotify user (preserves queue state)
+    session_id = find_session_by_user(spotify_user_id) if spotify_user_id else None
+    if not session_id:
+        session_id = secrets.token_urlsafe(32)
 
     add_session(
         session_id,
