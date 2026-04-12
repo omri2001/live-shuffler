@@ -14,6 +14,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/api/health")
+async def health():
+    return {"status": "ok"}
+
+
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(spotify.router, prefix="/api")
 app.include_router(queue.router, prefix="/api/queue")
