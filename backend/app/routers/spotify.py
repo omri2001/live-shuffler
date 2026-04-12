@@ -1,3 +1,5 @@
+import contextlib
+
 from fastapi import APIRouter, Request, Response
 
 from app.services.spotify import sessions, spotify_request
@@ -38,10 +40,8 @@ async def play(request: Request):
     if not session_id:
         return Response(status_code=401)
     body = None
-    try:
+    with contextlib.suppress(Exception):
         body = await request.json()
-    except Exception:
-        pass
     resp = await spotify_request(session_id, "PUT", "/me/player/play", json=body)
     return Response(status_code=resp.status_code)
 
@@ -103,7 +103,16 @@ async def get_devices(request: Request):
 @router.get("/genres")
 async def get_genres():
     return [
-        "Pop", "Rock", "Hip Hop", "Jazz", "Electronic",
-        "R&B", "Classical", "Reggae", "Metal", "Country",
-        "Latin", "Indie",
+        "Pop",
+        "Rock",
+        "Hip Hop",
+        "Jazz",
+        "Electronic",
+        "R&B",
+        "Classical",
+        "Reggae",
+        "Metal",
+        "Country",
+        "Latin",
+        "Indie",
     ]

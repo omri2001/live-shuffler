@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react';
-import { usePlayer } from '../../context/PlayerContext';
-import * as api from '../../api/spotify';
+import { useEffect, useCallback } from "react";
+import { usePlayer } from "../../context/PlayerContext";
+import * as api from "../../api/spotify";
 
 export default function PlaybackControls() {
   const { state, dispatch, refreshQueue } = usePlayer();
@@ -8,30 +8,30 @@ export default function PlaybackControls() {
   const handlePlayPause = useCallback(async () => {
     if (state.isPlaying) {
       await api.pause();
-      dispatch({ type: 'TOGGLE_PLAY', isPlaying: false });
+      dispatch({ type: "TOGGLE_PLAY", isPlaying: false });
     } else {
       await api.play();
-      dispatch({ type: 'TOGGLE_PLAY', isPlaying: true });
+      dispatch({ type: "TOGGLE_PLAY", isPlaying: true });
     }
   }, [state.isPlaying, dispatch]);
 
   // Global spacebar for play/pause
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.code !== 'Space') return;
+      if (e.code !== "Space") return;
       // Don't intercept if user is typing in an input/select/textarea
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       e.preventDefault();
       handlePlayPause();
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, [handlePlayPause]);
 
   const handleRestart = async () => {
     await api.queueRestart();
-    dispatch({ type: 'SET_PROGRESS', progressMs: 0 });
+    dispatch({ type: "SET_PROGRESS", progressMs: 0 });
   };
 
   const handleSkip = async () => {
@@ -62,7 +62,13 @@ export default function PlaybackControls() {
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
           <path d="M2 2v4h4" />
-          <path d="M2 6A6 6 0 1 1 3.34 10" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          <path
+            d="M2 6A6 6 0 1 1 3.34 10"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            fill="none"
+            strokeLinecap="round"
+          />
         </svg>
       </button>
 
@@ -82,7 +88,7 @@ export default function PlaybackControls() {
       <button
         onClick={handlePlayPause}
         className="w-10 h-10 flex items-center justify-center rounded-full bg-spotify-white hover:scale-105 transition-transform"
-        title={state.isPlaying ? 'Pause' : 'Play'}
+        title={state.isPlaying ? "Pause" : "Play"}
       >
         {state.isPlaying ? (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="#121212">

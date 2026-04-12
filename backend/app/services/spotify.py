@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import time
 from pathlib import Path
@@ -15,17 +16,13 @@ sessions: dict[str, dict] = {}
 
 def _load_sessions() -> None:
     if _SESSIONS_FILE.exists():
-        try:
+        with contextlib.suppress(Exception):
             sessions.update(json.loads(_SESSIONS_FILE.read_text()))
-        except Exception:
-            pass
 
 
 def _save_sessions() -> None:
-    try:
+    with contextlib.suppress(Exception):
         _SESSIONS_FILE.write_text(json.dumps(sessions))
-    except Exception:
-        pass
 
 
 # Load on import so sessions survive reloads
@@ -78,7 +75,7 @@ async def spotify_request(
         raise ValueError("No valid token")
 
     async with httpx.AsyncClient() as client:
-        for attempt in range(3):
+        for _attempt in range(3):
             resp = await client.request(
                 method,
                 f"{SPOTIFY_API_BASE}{path}",

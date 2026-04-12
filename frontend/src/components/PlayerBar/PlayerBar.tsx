@@ -1,7 +1,7 @@
-import { usePlayer } from '../../context/PlayerContext';
-import TrackInfo from './TrackInfo';
-import PlaybackControls from './PlaybackControls';
-import ProgressSlider from './ProgressSlider';
+import { usePlayer } from "../../context/PlayerContext";
+import TrackInfo from "./TrackInfo";
+import PlaybackControls from "./PlaybackControls";
+import ProgressSlider from "./ProgressSlider";
 
 export default function PlayerBar() {
   const { state } = usePlayer();

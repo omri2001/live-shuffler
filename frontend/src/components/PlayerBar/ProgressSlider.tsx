@@ -1,12 +1,12 @@
-import { useRef } from 'react';
-import { usePlayer } from '../../context/PlayerContext';
-import { seek } from '../../api/spotify';
+import { useRef } from "react";
+import { usePlayer } from "../../context/PlayerContext";
+import { seek } from "../../api/spotify";
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export default function ProgressSlider() {
@@ -15,18 +15,21 @@ export default function ProgressSlider() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     seekingRef.current = true;
-    dispatch({ type: 'SET_PROGRESS', progressMs: Number(e.target.value) });
+    dispatch({ type: "SET_PROGRESS", progressMs: Number(e.target.value) });
   };
 
-  const handleRelease = async (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
+  const handleRelease = async (
+    e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>,
+  ) => {
     if (!seekingRef.current) return;
     seekingRef.current = false;
     const positionMs = Number((e.target as HTMLInputElement).value);
-    dispatch({ type: 'SET_PROGRESS', progressMs: positionMs });
+    dispatch({ type: "SET_PROGRESS", progressMs: positionMs });
     await seek(positionMs);
   };
 
-  const progress = state.durationMs > 0 ? (state.progressMs / state.durationMs) * 100 : 0;
+  const progress =
+    state.durationMs > 0 ? (state.progressMs / state.durationMs) * 100 : 0;
 
   return (
     <div className="flex items-center gap-2 w-full max-w-[500px]">

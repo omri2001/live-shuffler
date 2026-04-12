@@ -1,4 +1,4 @@
-import type { Track } from '../../types/spotify';
+import type { Track } from "../../types/spotify";
 
 export default function TrackInfo({ track }: { track: Track | null }) {
   if (!track) {
@@ -17,14 +17,20 @@ export default function TrackInfo({ track }: { track: Track | null }) {
   return (
     <div className="flex items-center gap-3 min-w-[200px]">
       {albumArt ? (
-        <img src={albumArt} alt={track.album.name} className="w-12 h-12 rounded" />
+        <img
+          src={albumArt}
+          alt={track.album.name}
+          className="w-12 h-12 rounded"
+        />
       ) : (
         <div className="w-12 h-12 rounded bg-spotify-dark-lighter" />
       )}
       <div className="text-left overflow-hidden">
-        <p className="text-sm font-medium text-spotify-white truncate">{track.name}</p>
+        <p className="text-sm font-medium text-spotify-white truncate">
+          {track.name}
+        </p>
         <p className="text-xs text-spotify-gray truncate">
-          {track.artists.map(a => a.name).join(', ')}
+          {track.artists.map((a) => a.name).join(", ")}
         </p>
       </div>
     </div>

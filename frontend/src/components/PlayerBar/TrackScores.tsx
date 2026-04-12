@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { usePlayer } from '../../context/PlayerContext';
-import { fetchMetricConfigs, type MetricConfig } from '../../api/spotify';
+import { useEffect, useState } from "react";
+import { usePlayer } from "../../context/PlayerContext";
+import { fetchMetricConfigs, type MetricConfig } from "../../api/spotify";
 
 interface TrackScoresProps {
   onInspect?: (trackId: string) => void;
@@ -12,10 +12,12 @@ export default function TrackScores({ onInspect }: TrackScoresProps) {
   const [configs, setConfigs] = useState<Record<string, MetricConfig>>({});
 
   useEffect(() => {
-    fetchMetricConfigs().then(setConfigs).catch(() => {});
+    fetchMetricConfigs()
+      .then(setConfigs)
+      .catch(() => {});
   }, []);
 
-  const getColor = (name: string) => configs[name]?.color ?? '#1DB954';
+  const getColor = (name: string) => configs[name]?.color ?? "#1DB954";
 
   return (
     <div className="absolute left-0 top-0 bottom-20 w-64 bg-spotify-dark-light border-r border-spotify-dark-lighter flex flex-col">
@@ -33,7 +35,9 @@ export default function TrackScores({ onInspect }: TrackScoresProps) {
 
       {!state.currentTrack ? (
         <div className="flex-1 flex items-center justify-center px-4">
-          <p className="text-spotify-gray text-sm text-center">No track playing</p>
+          <p className="text-spotify-gray text-sm text-center">
+            No track playing
+          </p>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto px-4 py-3">
@@ -43,7 +47,7 @@ export default function TrackScores({ onInspect }: TrackScoresProps) {
               {state.currentTrack.name}
             </p>
             <p className="text-xs text-spotify-gray truncate">
-              {state.currentTrack.artists.map(a => a.name).join(', ')}
+              {state.currentTrack.artists.map((a) => a.name).join(", ")}
             </p>
           </div>
 
@@ -56,7 +60,10 @@ export default function TrackScores({ onInspect }: TrackScoresProps) {
                     <span className="text-xs uppercase tracking-wider text-spotify-gray">
                       {name}
                     </span>
-                    <span className="text-xs font-medium tabular-nums" style={{ color: getColor(name) }}>
+                    <span
+                      className="text-xs font-medium tabular-nums"
+                      style={{ color: getColor(name) }}
+                    >
                       {value}
                     </span>
                   </div>

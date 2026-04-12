@@ -8,11 +8,21 @@ interface MetricSliderProps {
   y: number;
 }
 
-export default function MetricSlider({ color, value, onChange, onCommit, onHover, x, y }: MetricSliderProps) {
+export default function MetricSlider({
+  color,
+  value,
+  onChange,
+  onCommit,
+  onHover,
+  x,
+  y,
+}: MetricSliderProps) {
   const handleSliderClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const py = rect.bottom - e.clientY;
-    const pct = Math.round(Math.max(0, Math.min(100, (py / rect.height) * 100)));
+    const pct = Math.round(
+      Math.max(0, Math.min(100, (py / rect.height) * 100)),
+    );
     onChange(pct);
   };
 
@@ -24,7 +34,7 @@ export default function MetricSlider({ color, value, onChange, onCommit, onHover
   return (
     <div
       className="fixed z-50 pointer-events-auto"
-      style={{ left: x, top: y - 16, transform: 'translate(-50%, -100%)' }}
+      style={{ left: x, top: y - 16, transform: "translate(-50%, -100%)" }}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
     >
@@ -42,8 +52,14 @@ export default function MetricSlider({ color, value, onChange, onCommit, onHover
           {/* Track */}
           <div
             className="w-4 h-48 rounded-full relative cursor-pointer"
-            style={{ backgroundColor: `${color}15`, border: `1px solid ${color}30` }}
-            onClick={(e) => { handleSliderClick(e); onCommit(); }}
+            style={{
+              backgroundColor: `${color}15`,
+              border: `1px solid ${color}30`,
+            }}
+            onClick={(e) => {
+              handleSliderClick(e);
+              onCommit();
+            }}
             onMouseMove={handleDrag}
             onMouseUp={onCommit}
           >
@@ -53,7 +69,7 @@ export default function MetricSlider({ color, value, onChange, onCommit, onHover
               style={{
                 height: `${value}%`,
                 background: `linear-gradient(to top, ${color}, ${color}88)`,
-                boxShadow: value > 0 ? `0 0 8px ${color}66` : 'none',
+                boxShadow: value > 0 ? `0 0 8px ${color}66` : "none",
               }}
             />
 
@@ -63,7 +79,7 @@ export default function MetricSlider({ color, value, onChange, onCommit, onHover
               style={{
                 bottom: `clamp(-4px, calc(${value}% - 14px), calc(100% - 24px))`,
                 backgroundColor: color,
-                borderColor: '#fff',
+                borderColor: "#fff",
                 boxShadow: `0 0 10px ${color}88, 0 2px 8px rgba(0,0,0,0.4)`,
               }}
             />

@@ -28,7 +28,8 @@ async def fetch_tracks_for_source(
     elif source == "playlist" and playlist_id:
         offset = 0
         while True:
-            resp = await spotify_request(session_id, "GET", f"/playlists/{playlist_id}/tracks?offset={offset}&limit=100")
+            url = f"/playlists/{playlist_id}/tracks?offset={offset}&limit=100"
+            resp = await spotify_request(session_id, "GET", url)
             if resp.status_code != 200:
                 break
             data = resp.json()
@@ -47,7 +48,7 @@ async def fetch_tracks_for_source(
             album_data = resp.json()
             track_ids = [item["id"] for item in album_data.get("tracks", {}).get("items", []) if item.get("id")]
             for i in range(0, len(track_ids), 50):
-                batch = track_ids[i:i+50]
+                batch = track_ids[i : i + 50]
                 ids_param = ",".join(batch)
                 tresp = await spotify_request(session_id, "GET", f"/tracks?ids={ids_param}")
                 if tresp.status_code == 200:

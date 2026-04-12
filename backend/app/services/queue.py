@@ -81,7 +81,7 @@ class QueueState:
         if not any(w > 0 for w in weights.values()):
             if not self.tracks:
                 available = [t for t in self.all_tracks if t["id"] not in self.played]
-                self.tracks = available[:self.queue_size]
+                self.tracks = available[: self.queue_size]
                 self.current_index = 0 if self.tracks else -1
             return
 
@@ -97,8 +97,6 @@ class QueueState:
         # Weights are out of 100 — the unfilled portion is "general" (random songs)
         # E.g. hebrew=10 means 10% hebrew, 90% random from full library
         active_weights = {k: v for k, v in weights.items() if v > 0}
-        total_metric_pct = min(sum(active_weights.values()), 100)
-        general_pct = 100 - total_metric_pct
         slots_needed = self.queue_size - (1 if current_id else 0)
 
         # Allocate metric slots proportionally to their weight (out of 100, not out of total)
@@ -118,8 +116,7 @@ class QueueState:
 
         for metric_name, num_slots in slot_alloc.items():
             candidates = [
-                t for t in available
-                if t["id"] not in picked_ids and t.get("_scores", {}).get(metric_name, 0) > 0
+                t for t in available if t["id"] not in picked_ids and t.get("_scores", {}).get(metric_name, 0) > 0
             ]
             candidates.sort(key=lambda t: t["_scores"][metric_name], reverse=True)
             # Shuffle among ties to keep variety
@@ -144,7 +141,7 @@ class QueueState:
         if current_id and self.current_track:
             result.insert(0, self.current_track)
 
-        self.tracks = result[:self.queue_size]
+        self.tracks = result[: self.queue_size]
         self.current_index = 0 if self.tracks else -1
 
     def _refill(self) -> None:
@@ -163,8 +160,6 @@ class QueueState:
         weights = self.last_weights
         if weights and any(w > 0 for w in weights.values()):
             active = {k: v for k, v in weights.items() if v > 0}
-            total_metric_pct = min(sum(active.values()), 100)
-            general_pct = 100 - total_metric_pct
 
             # Allocate refill slots the same way as rerank
             slot_alloc: dict[str, int] = {}
@@ -180,8 +175,7 @@ class QueueState:
 
             for metric_name, num_slots in slot_alloc.items():
                 candidates = [
-                    t for t in available
-                    if t["id"] not in used_ids and t.get("_scores", {}).get(metric_name, 0) > 0
+                    t for t in available if t["id"] not in used_ids and t.get("_scores", {}).get(metric_name, 0) > 0
                 ]
                 random.shuffle(candidates)
                 candidates.sort(key=lambda t: t["_scores"][metric_name], reverse=True)
@@ -218,7 +212,7 @@ class QueueState:
             if t["id"] == playing_id:
                 self.tracks.insert(0, t)
                 if len(self.tracks) > self.queue_size:
-                    self.tracks = self.tracks[:self.queue_size]
+                    self.tracks = self.tracks[: self.queue_size]
                 self.current_index = 0
                 return
 
@@ -251,9 +245,9 @@ class QueueState:
     def shuffle(self) -> None:
         if self.current_index < 0 or self.current_index >= len(self.tracks) - 1:
             return
-        remaining = self.tracks[self.current_index + 1:]
+        remaining = self.tracks[self.current_index + 1 :]
         random.shuffle(remaining)
-        self.tracks[self.current_index + 1:] = remaining
+        self.tracks[self.current_index + 1 :] = remaining
 
     def remove_track(self, index: int) -> dict | None:
         if index < 0 or index >= len(self.tracks):
@@ -261,9 +255,8 @@ class QueueState:
         removed = self.tracks.pop(index)
         if index < self.current_index:
             self.current_index -= 1
-        elif index == self.current_index:
-            if self.current_index >= len(self.tracks):
-                self.current_index = max(len(self.tracks) - 1, -1)
+        elif index == self.current_index and self.current_index >= len(self.tracks):
+            self.current_index = max(len(self.tracks) - 1, -1)
         return removed
 
     def clear(self) -> None:

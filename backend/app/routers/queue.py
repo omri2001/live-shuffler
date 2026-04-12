@@ -39,7 +39,9 @@ async def _play_track(session_id: str, track_uri: str) -> None:
     device_id = await _get_active_device(session_id)
     params = f"?device_id={device_id}" if device_id else ""
     await spotify_request(
-        session_id, "PUT", f"/me/player/play{params}",
+        session_id,
+        "PUT",
+        f"/me/player/play{params}",
         json={"uris": [track_uri]},
     )
 
@@ -99,7 +101,6 @@ async def get_queue_stats(request: Request):
     return {"total": len(unplayed), "metrics": metrics}
 
 
-
 def _sse_event(data: dict) -> str:
     return f"data: {json.dumps(data)}\n\n"
 
@@ -115,9 +116,7 @@ async def add_to_queue(request: Request, body: AddTracksBody):
     async def generate():
         yield _sse_event({"step": "fetching", "progress": 0, "total": 0, "message": "Fetching tracks..."})
 
-        source_key, tracks = await fetch_tracks_for_source(
-            session_id, body.source, body.playlist_id, body.album_id
-        )
+        source_key, tracks = await fetch_tracks_for_source(session_id, body.source, body.playlist_id, body.album_id)
 
         total = len(tracks)
         yield _sse_event({"step": "fetching", "progress": total, "total": total, "message": f"Fetched {total} tracks"})
@@ -160,10 +159,12 @@ async def add_to_queue(request: Request, body: AddTracksBody):
                 new_scores[track["id"]] = scores
                 scored_count += 1
                 if (i + 1) % 20 == 0 or i == len(uncached_tracks) - 1:
-                    yield _sse_event({"step": "scoring", "progress": scored_count, "total": total, "message": f"Scoring tracks... {scored_count}/{total}"})
+                    msg = f"Scoring tracks... {scored_count}/{total}"
+                    yield _sse_event({"step": "scoring", "progress": scored_count, "total": total, "message": msg})
             set_cached_scores_bulk(new_scores)
         else:
-            yield _sse_event({"step": "scoring", "progress": total, "total": total, "message": f"Loaded {total} tracks from cache"})
+            msg = f"Loaded {total} tracks from cache"
+            yield _sse_event({"step": "scoring", "progress": total, "total": total, "message": msg})
 
         all_tracks = cached_tracks + uncached_tracks
 
@@ -194,7 +195,7 @@ async def add_to_queue(request: Request, body: AddTracksBody):
                             set_cached_scores_bulk({playing_id: playing_item["_scores"]})
                         q.tracks.insert(0, playing_item)
                         if len(q.tracks) > q.queue_size:
-                            q.tracks = q.tracks[:q.queue_size]
+                            q.tracks = q.tracks[: q.queue_size]
                         q.current_index = 0
         else:
             q._refill()
@@ -269,7 +270,7 @@ async def sync_current(request: Request, body: SyncCurrentBody):
 
     q.tracks.insert(0, track)
     if len(q.tracks) > q.queue_size:
-        q.tracks = q.tracks[:q.queue_size]
+        q.tracks = q.tracks[: q.queue_size]
     q.current_index = 0
     return q.to_dict()
 
@@ -327,6 +328,7 @@ async def shuffle_random(request: Request):
         return Response(status_code=401)
 
     import random
+
     q = get_queue(session_id)
     if not q.all_tracks:
         return Response(status_code=400, content="No library loaded")
@@ -341,7 +343,7 @@ async def shuffle_random(request: Request):
     if current_id and q.current_track:
         new_tracks.insert(0, q.current_track)
 
-    q.tracks = new_tracks[:q.queue_size]
+    q.tracks = new_tracks[: q.queue_size]
     q.current_index = 0 if q.tracks else -1
     q.last_weights = {}
 
@@ -363,7 +365,7 @@ async def set_queue_size(request: Request, body: QueueSizeBody):
 
     # Resize: trim or refill
     if len(q.tracks) > q.queue_size:
-        q.tracks = q.tracks[:q.queue_size]
+        q.tracks = q.tracks[: q.queue_size]
     else:
         q._refill()
 

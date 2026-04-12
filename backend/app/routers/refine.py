@@ -14,12 +14,22 @@ from app.services.tracks import fetch_tracks_for_source
 router = APIRouter()
 
 AUDIO_FEATURE_NAMES = [
-    "energy", "danceability", "valence", "acousticness",
-    "instrumentalness", "liveness", "speechiness", "loudness",
+    "energy",
+    "danceability",
+    "valence",
+    "acousticness",
+    "instrumentalness",
+    "liveness",
+    "speechiness",
+    "loudness",
 ]
 SCORE_BUCKETS = [
-    ("0", 0, 0), ("1-19", 1, 19), ("20-39", 20, 39),
-    ("40-59", 40, 59), ("60-79", 60, 79), ("80-100", 80, 100),
+    ("0", 0, 0),
+    ("1-19", 1, 19),
+    ("20-39", 20, 39),
+    ("40-59", 40, 59),
+    ("60-79", 60, 79),
+    ("80-100", 80, 100),
 ]
 
 
@@ -154,8 +164,14 @@ async def analyze(request: Request, body: RefineAnalyzeBody):
             breakdown = score_track_with_breakdown(track, body.metric)
             track_results.append((track, breakdown))
             if (i + 1) % 50 == 0 or i == len(unique) - 1:
-                yield _sse_event({"step": "scoring", "progress": i + 1, "total": total,
-                                  "message": f"Scoring tracks... {i + 1}/{total}"})
+                yield _sse_event(
+                    {
+                        "step": "scoring",
+                        "progress": i + 1,
+                        "total": total,
+                        "message": f"Scoring tracks... {i + 1}/{total}",
+                    }
+                )
 
         # 4. Build analysis
         analysis = _build_analysis(body.metric, metric_cfg, track_results)
@@ -248,18 +264,20 @@ def _build_analysis(metric_name: str, metric_cfg: dict, track_results: list[tupl
     for track, breakdown in sorted_results[:500]:
         artists = [a["name"] for a in track.get("artists", [])]
         album_images = track.get("album", {}).get("images", [])
-        tracks_out.append({
-            "id": track["id"],
-            "name": track.get("name", ""),
-            "artists": artists,
-            "album": track.get("album", {}).get("name", ""),
-            "album_image": album_images[-1]["url"] if album_images else "",
-            "score": breakdown["score"],
-            "breakdown": breakdown,
-            "artist_genres": track.get("_artist_genres", []),
-            "album_genres": track.get("_album_genres", []),
-            "audio_features": track.get("_audio_features", {}),
-        })
+        tracks_out.append(
+            {
+                "id": track["id"],
+                "name": track.get("name", ""),
+                "artists": artists,
+                "album": track.get("album", {}).get("name", ""),
+                "album_image": album_images[-1]["url"] if album_images else "",
+                "score": breakdown["score"],
+                "breakdown": breakdown,
+                "artist_genres": track.get("_artist_genres", []),
+                "album_genres": track.get("_album_genres", []),
+                "audio_features": track.get("_audio_features", {}),
+            }
+        )
 
     return {
         "metric_name": metric_name,

@@ -90,7 +90,7 @@ async def accept(request: Request, track_id: str):
     insert_at = min(1, len(q.tracks))  # after current, or at 0 if queue is empty
     q.tracks.insert(insert_at, track)
     if len(q.tracks) > q.queue_size:
-        q.tracks = q.tracks[:q.queue_size]
+        q.tracks = q.tracks[: q.queue_size]
 
     return {"queue": q.to_dict(), "remaining": len(pool.suggestions)}
 
@@ -127,14 +127,16 @@ async def search(code: str, q: str):
         if not t or not t.get("id"):
             continue
         images = t.get("album", {}).get("images", [])
-        tracks.append({
-            "id": t["id"],
-            "name": t.get("name", ""),
-            "artists": [a["name"] for a in t.get("artists", [])],
-            "album": t.get("album", {}).get("name", ""),
-            "image": images[0]["url"] if images else "",
-            "uri": t.get("uri", ""),
-        })
+        tracks.append(
+            {
+                "id": t["id"],
+                "name": t.get("name", ""),
+                "artists": [a["name"] for a in t.get("artists", [])],
+                "album": t.get("album", {}).get("name", ""),
+                "image": images[0]["url"] if images else "",
+                "uri": t.get("uri", ""),
+            }
+        )
     return {"tracks": tracks}
 
 

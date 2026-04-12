@@ -27,11 +27,12 @@ import yaml
 # Types
 # ---------------------------------------------------------------------------
 
+
 class TrackData(TypedDict):
-    track: dict              # Spotify track object
-    artist_genres: list[str] # Merged genres from track's own artists
+    track: dict  # Spotify track object
+    artist_genres: list[str]  # Merged genres from track's own artists
     album_genres: list[str]  # Merged genres from ALL artists on the album
-    audio_features: dict     # From ReccoBeats (energy, danceability, tempo, etc.)
+    audio_features: dict  # From ReccoBeats (energy, danceability, tempo, etc.)
 
 
 Scorer = Callable[[TrackData], int]
@@ -46,10 +47,12 @@ METRIC_CONFIGS: dict[str, dict] = {}  # {name: {color, type}}
 
 def scorer(name: str, color: str = "#1DB954"):
     """Decorator to register a custom scorer function under *name*."""
+
     def decorator(fn: Scorer) -> Scorer:
         SCORERS[name] = fn
         METRIC_CONFIGS[name] = {"color": color, "type": "custom"}
         return fn
+
     return decorator
 
 
@@ -90,6 +93,7 @@ def compute_weighted_score(track_scores: dict[str, int], weights: dict[str, int]
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _genre_contains(genres: list[str], *keywords: str) -> bool:
     return any(kw in g for g in genres for kw in keywords)
 
@@ -100,15 +104,13 @@ def _text_matches(track: dict, pattern: re.Pattern) -> bool:
         return True
     if pattern.search(track.get("album", {}).get("name", "")):
         return True
-    for artist in track.get("artists", []):
-        if pattern.search(artist.get("name", "")):
-            return True
-    return False
+    return any(pattern.search(artist.get("name", "")) for artist in track.get("artists", []))
 
 
 # ---------------------------------------------------------------------------
 # YAML config loader
 # ---------------------------------------------------------------------------
+
 
 def _build_binary_scorer(cfg: dict) -> Scorer:
     """Build a binary scorer (0 or 100) from YAML config."""
@@ -211,6 +213,7 @@ _load_metrics_from_yaml()
 # Full config access (for refine tools)
 # ---------------------------------------------------------------------------
 
+
 def get_metric_full_configs() -> dict[str, dict]:
     """Return full YAML config for all metrics."""
     configs: dict[str, dict] = {}
@@ -226,8 +229,16 @@ def score_track_with_breakdown(track: dict, metric_name: str) -> dict:
     configs = get_metric_full_configs()
     cfg = configs.get(metric_name)
     if not cfg:
-        return {"score": 0, "base_score": 0, "base_reason": None, "matched_genres": [],
-                "subgenre_bonus": 0, "audio_boosts": [], "tempo_bonus": 0, "tempo": 0}
+        return {
+            "score": 0,
+            "base_score": 0,
+            "base_reason": None,
+            "matched_genres": [],
+            "subgenre_bonus": 0,
+            "audio_boosts": [],
+            "tempo_bonus": 0,
+            "tempo": 0,
+        }
 
     data = TrackData(
         track=track,
@@ -285,11 +296,13 @@ def score_track_with_breakdown(track: dict, metric_name: str) -> dict:
         val = af.get(boost["feature"], 0)
         effective = 1 - val if boost.get("invert") else val
         contribution = int(boost["weight"] * effective)
-        audio_boost_details.append({
-            "feature": boost["feature"],
-            "value": round(val, 3),
-            "contribution": contribution,
-        })
+        audio_boost_details.append(
+            {
+                "feature": boost["feature"],
+                "value": round(val, 3),
+                "contribution": contribution,
+            }
+        )
 
     tempo_bonus = 0
     tempo = af.get("tempo", 0)

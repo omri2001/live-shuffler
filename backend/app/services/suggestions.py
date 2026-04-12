@@ -53,13 +53,15 @@ class SuggestionPool:
     def list_sorted(self) -> list[dict]:
         items = []
         for track_id, s in self.suggestions.items():
-            items.append({
-                "track_id": track_id,
-                "track": s.track,
-                "count": s.count,
-                "first_requested": s.first_requested,
-                "last_requested": s.last_requested,
-            })
+            items.append(
+                {
+                    "track_id": track_id,
+                    "track": s.track,
+                    "count": s.count,
+                    "first_requested": s.first_requested,
+                    "last_requested": s.last_requested,
+                }
+            )
         items.sort(key=lambda x: (-x["count"], -x["last_requested"]))
         return items
 

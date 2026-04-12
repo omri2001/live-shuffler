@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-spotify-green: #1DB954;
+  --color-spotify-green: #1db954;
   --color-spotify-green-hover: #1ed760;
   --color-spotify-dark: #121212;
   --color-spotify-dark-light: #181818;
@@ -14,7 +14,11 @@ body {
   margin: 0;
   background: var(--color-spotify-dark);
   color: var(--color-spotify-white);
-  font-family: 'Circular', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Circular",
+    system-ui,
+    -apple-system,
+    sans-serif;
   overflow: hidden;
   height: 100vh;
 }

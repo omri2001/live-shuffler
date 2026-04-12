@@ -22,13 +22,15 @@ router = APIRouter()
 
 @router.get("/login")
 async def login():
-    params = urllib.parse.urlencode({
-        "response_type": "code",
-        "client_id": SPOTIFY_CLIENT_ID,
-        "scope": SCOPES,
-        "redirect_uri": SPOTIFY_REDIRECT_URI,
-        "show_dialog": "true",
-    })
+    params = urllib.parse.urlencode(
+        {
+            "response_type": "code",
+            "client_id": SPOTIFY_CLIENT_ID,
+            "scope": SCOPES,
+            "redirect_uri": SPOTIFY_REDIRECT_URI,
+            "show_dialog": "true",
+        }
+    )
     return RedirectResponse(f"{SPOTIFY_AUTH_URL}?{params}")
 
 
@@ -52,11 +54,14 @@ async def callback(code: str):
     data = resp.json()
     session_id = secrets.token_urlsafe(32)
 
-    add_session(session_id, {
-        "access_token": data["access_token"],
-        "refresh_token": data["refresh_token"],
-        "expires_at": time.time() + data["expires_in"] - 60,
-    })
+    add_session(
+        session_id,
+        {
+            "access_token": data["access_token"],
+            "refresh_token": data["refresh_token"],
+            "expires_at": time.time() + data["expires_in"] - 60,
+        },
+    )
 
     # Redirect to frontend with session token — frontend stores it as cookie
     return RedirectResponse(f"{FRONTEND_URL}?session={session_id}")
@@ -69,6 +74,7 @@ async def me(request: Request):
         return Response(status_code=401)
 
     from app.services.spotify import spotify_request
+
     resp = await spotify_request(session_id, "GET", "/me")
     return resp.json()
 

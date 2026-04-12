@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import type { CircleLayout } from '../../App';
+import { useEffect } from "react";
+import type { CircleLayout } from "../../App";
 
 interface SettingsModalProps {
   open: boolean;
@@ -17,19 +17,32 @@ interface SettingsModalProps {
 }
 
 const LAYOUTS: { key: CircleLayout; label: string }[] = [
-  { key: 'carousel', label: 'Scroll' },
-  { key: 'grid', label: 'Grid' },
-  { key: 'favorites', label: 'Picks' },
+  { key: "carousel", label: "Scroll" },
+  { key: "grid", label: "Grid" },
+  { key: "favorites", label: "Picks" },
 ];
 
-export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMode, queueSize, onQueueSizeChange, circleLayout, onCircleLayoutChange, gridColumns, onGridColumnsChange, requestsEnabled, onToggleRequests }: SettingsModalProps) {
+export default function SettingsModal({
+  open,
+  onClose,
+  darkMode,
+  onToggleDarkMode,
+  queueSize,
+  onQueueSizeChange,
+  circleLayout,
+  onCircleLayoutChange,
+  gridColumns,
+  onGridColumnsChange,
+  requestsEnabled,
+  onToggleRequests,
+}: SettingsModalProps) {
   useEffect(() => {
     if (!open) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
   if (!open) return null;
@@ -48,7 +61,15 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
             onClick={onClose}
             className="text-spotify-gray hover:text-spotify-white transition-colors"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
               <path d="M5 5l10 10M15 5L5 15" />
             </svg>
           </button>
@@ -59,18 +80,22 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
           {/* Dark/Light mode toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-spotify-white">Dark mode</p>
-              <p className="text-xs text-spotify-gray mt-0.5">Switch between dark and light theme</p>
+              <p className="text-sm font-medium text-spotify-white">
+                Dark mode
+              </p>
+              <p className="text-xs text-spotify-gray mt-0.5">
+                Switch between dark and light theme
+              </p>
             </div>
             <button
               onClick={onToggleDarkMode}
               className={`relative w-11 h-6 rounded-full transition-colors ${
-                darkMode ? 'bg-spotify-green' : 'bg-spotify-dark-lighter'
+                darkMode ? "bg-spotify-green" : "bg-spotify-dark-lighter"
               }`}
             >
               <div
                 className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                  darkMode ? 'translate-x-5.5' : 'translate-x-0.5'
+                  darkMode ? "translate-x-5.5" : "translate-x-0.5"
                 }`}
               />
             </button>
@@ -79,8 +104,12 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
           {/* Queue size */}
           <div className="flex items-center justify-between mt-5 pt-5 border-t border-spotify-dark-lighter">
             <div>
-              <p className="text-sm font-medium text-spotify-white">Queue size</p>
-              <p className="text-xs text-spotify-gray mt-0.5">Number of songs in the queue</p>
+              <p className="text-sm font-medium text-spotify-white">
+                Queue size
+              </p>
+              <p className="text-xs text-spotify-gray mt-0.5">
+                Number of songs in the queue
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -95,12 +124,18 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
                 contentEditable
                 suppressContentEditableWarning
                 onBlur={(e) => {
-                  const v = Math.max(1, Math.min(50, Number(e.currentTarget.textContent) || 1));
+                  const v = Math.max(
+                    1,
+                    Math.min(50, Number(e.currentTarget.textContent) || 1),
+                  );
                   onQueueSizeChange(v);
                   e.currentTarget.textContent = String(v);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    (e.target as HTMLElement).blur();
+                  }
                 }}
               >
                 {queueSize}
@@ -118,18 +153,22 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
           {/* Metric layout */}
           <div className="flex items-center justify-between mt-5 pt-5 border-t border-spotify-dark-lighter">
             <div>
-              <p className="text-sm font-medium text-spotify-white">Metric layout</p>
-              <p className="text-xs text-spotify-gray mt-0.5">How metric circles are displayed</p>
+              <p className="text-sm font-medium text-spotify-white">
+                Metric layout
+              </p>
+              <p className="text-xs text-spotify-gray mt-0.5">
+                How metric circles are displayed
+              </p>
             </div>
             <div className="flex rounded-lg overflow-hidden border border-spotify-dark-lighter">
-              {LAYOUTS.map(l => (
+              {LAYOUTS.map((l) => (
                 <button
                   key={l.key}
                   onClick={() => onCircleLayoutChange(l.key)}
                   className={`min-w-[52px] px-3 py-1.5 text-xs font-medium transition-colors text-center ${
                     circleLayout === l.key
-                      ? 'bg-spotify-green text-black'
-                      : 'bg-spotify-dark-lighter text-spotify-gray hover:text-spotify-white'
+                      ? "bg-spotify-green text-black"
+                      : "bg-spotify-dark-lighter text-spotify-gray hover:text-spotify-white"
                   }`}
                 >
                   {l.label}
@@ -139,15 +178,21 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
           </div>
 
           {/* Grid zoom (only when grid layout is selected) */}
-          {circleLayout === 'grid' && (
+          {circleLayout === "grid" && (
             <div className="flex items-center justify-between mt-5 pt-5 border-t border-spotify-dark-lighter">
               <div>
-                <p className="text-sm font-medium text-spotify-white">Grid size</p>
-                <p className="text-xs text-spotify-gray mt-0.5">Circles per row</p>
+                <p className="text-sm font-medium text-spotify-white">
+                  Grid size
+                </p>
+                <p className="text-xs text-spotify-gray mt-0.5">
+                  Circles per row
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => onGridColumnsChange(Math.max(3, gridColumns - 1))}
+                  onClick={() =>
+                    onGridColumnsChange(Math.max(3, gridColumns - 1))
+                  }
                   disabled={gridColumns <= 3}
                   className="w-7 h-7 rounded-full bg-spotify-dark-lighter text-spotify-white flex items-center justify-center hover:bg-spotify-gray/30 transition-colors text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                 >
@@ -158,18 +203,26 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
                   contentEditable
                   suppressContentEditableWarning
                   onBlur={(e) => {
-                    const v = Math.max(3, Math.min(10, Number(e.currentTarget.textContent) || 3));
+                    const v = Math.max(
+                      3,
+                      Math.min(10, Number(e.currentTarget.textContent) || 3),
+                    );
                     onGridColumnsChange(v);
                     e.currentTarget.textContent = String(v);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      (e.target as HTMLElement).blur();
+                    }
                   }}
                 >
                   {gridColumns}
                 </span>
                 <button
-                  onClick={() => onGridColumnsChange(Math.min(10, gridColumns + 1))}
+                  onClick={() =>
+                    onGridColumnsChange(Math.min(10, gridColumns + 1))
+                  }
                   disabled={gridColumns >= 10}
                   className="w-7 h-7 rounded-full bg-spotify-dark-lighter text-spotify-white flex items-center justify-center hover:bg-spotify-gray/30 transition-colors text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                 >
@@ -182,14 +235,20 @@ export default function SettingsModal({ open, onClose, darkMode, onToggleDarkMod
           {/* Song requests */}
           <div className="flex items-center justify-between mt-5 pt-5 border-t border-spotify-dark-lighter">
             <div>
-              <p className="text-sm font-medium text-spotify-white">Song requests</p>
-              <p className="text-xs text-spotify-gray mt-0.5">Let people suggest songs via QR code</p>
+              <p className="text-sm font-medium text-spotify-white">
+                Song requests
+              </p>
+              <p className="text-xs text-spotify-gray mt-0.5">
+                Let people suggest songs via QR code
+              </p>
             </div>
             <button
               onClick={onToggleRequests}
-              className={`relative w-11 h-6 rounded-full transition-colors ${requestsEnabled ? 'bg-spotify-green' : 'bg-spotify-dark-lighter'}`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${requestsEnabled ? "bg-spotify-green" : "bg-spotify-dark-lighter"}`}
             >
-              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${requestsEnabled ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+              <div
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${requestsEnabled ? "translate-x-5.5" : "translate-x-0.5"}`}
+              />
             </button>
           </div>
         </div>
