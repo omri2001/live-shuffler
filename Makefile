@@ -1,4 +1,4 @@
-.PHONY: run-docs run-backend run-frontend setup build-docs dev down clean
+.PHONY: run-docs run-backend run-frontend setup build-docs dev down clean test test-e2e test-all test-cov
 
 # Run services
 run-frontend:
@@ -19,6 +19,19 @@ setup:
 # Build
 build-docs:
 	uv run mkdocs build
+
+# Test
+test:
+	cd backend && uv run pytest tests/unit/ tests/integration/ -v
+
+test-e2e:
+	cd backend && uv run pytest tests/e2e/ -m e2e -v
+
+test-all:
+	cd backend && uv run pytest tests/ -m "e2e or not e2e" -v
+
+test-cov:
+	cd backend && uv run pytest tests/ -m "e2e or not e2e" --cov=app --cov-report=term-missing
 
 # Docker
 dev:

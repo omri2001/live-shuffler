@@ -3,7 +3,23 @@ name = "live-shuffler"
 version = "0.1.0"
 description = "Spotify-powered intelligent shuffle based on audio metrics"
 requires-python = ">=3.11"
+readme = "README.md"
+authors = [
+    { name = "Me" },
+    { name = "Myself" },
+    { name = "I" }
+]
+maintainers = [
+    { name = "omri", email = "omriassa@gmail.com" }
+]
+license = { text = "MIT" }
 dependencies = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
 ]
+
+
+[project.urls]
+Documentation = "https://definitelyomri.github.io/live-shuffler/"
+Repository = "https://github.com/definitelyOmri/live-shuffler"
+Issues = "https://github.com/definitelyOmri/live-shuffler/issues"

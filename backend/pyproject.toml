@@ -14,8 +14,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28",
     "pytest>=8.0",
     "pytest-asyncio>=0.25",
+    "pytest-cov>=6.0",
     "ruff>=0.12",
     "ty>=0.0.1a7",
 ]
@@ -29,3 +31,4 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+markers = ["e2e: end-to-end tests that exercise full API flows"]
