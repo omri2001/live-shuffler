@@ -84,14 +84,24 @@ export default function LibraryModal({
 
   useEffect(() => {
     if (!open) return;
-    if (tab === "playlists" && playlists.length === 0) {
+
+    // Prefetch playlist/album metadata when modal opens so Active tab shows names
+    const needPlaylists =
+      playlists.length === 0 &&
+      (tab === "playlists" ||
+        state.sources.some((s) => s.startsWith("playlist:")));
+    const needAlbums =
+      albums.length === 0 &&
+      (tab === "albums" || state.sources.some((s) => s.startsWith("album:")));
+
+    if (needPlaylists) {
       setLoading(true);
       api
         .fetchPlaylists()
         .then((d) => setPlaylists(d.items || []))
         .finally(() => setLoading(false));
     }
-    if (tab === "albums" && albums.length === 0) {
+    if (needAlbums) {
       setLoading(true);
       api
         .fetchAlbums()

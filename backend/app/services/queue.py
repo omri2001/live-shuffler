@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import json
 import random
 from dataclasses import dataclass, field
+from pathlib import Path
 
 DEFAULT_QUEUE_SIZE = 10
+_QUEUES_FILE = Path(__file__).resolve().parent.parent / "_queues.json"
+_save_task: asyncio.TimerHandle | None = None
 
 
 @dataclass
@@ -274,14 +280,89 @@ class QueueState:
             "current_index": self.current_index,
             "current_track": self.current_track,
             "sources": list(self.sources),
+            "last_weights": self.last_weights,
         }
+
+    def snapshot(self) -> dict:
+        """Return a lightweight summary for the resume prompt."""
+        return {
+            "has_state": len(self.all_tracks) > 0,
+            "sources": list(self.sources),
+            "track_count": len(self.all_tracks),
+            "queue_size": self.queue_size,
+            "weights": self.last_weights,
+            "played_count": len(self.played),
+        }
+
+    def serialize(self) -> dict:
+        """Serialize full state for disk persistence."""
+        return {
+            "tracks": self.tracks,
+            "all_tracks": self.all_tracks,
+            "current_index": self.current_index,
+            "played": list(self.played),
+            "last_weights": self.last_weights,
+            "queue_size": self.queue_size,
+            "sources": list(self.sources),
+            "track_sources": self.track_sources,
+        }
+
+    @classmethod
+    def deserialize(cls, data: dict) -> QueueState:
+        """Restore from serialized dict."""
+        return cls(
+            tracks=data.get("tracks", []),
+            all_tracks=data.get("all_tracks", []),
+            current_index=data.get("current_index", -1),
+            played=set(data.get("played", [])),
+            last_weights=data.get("last_weights", {}),
+            queue_size=data.get("queue_size", DEFAULT_QUEUE_SIZE),
+            sources=set(data.get("sources", [])),
+            track_sources=data.get("track_sources", {}),
+        )
 
 
 # Per-session queue store
 queues: dict[str, QueueState] = {}
 
 
+def _save_queues_now() -> None:
+    with contextlib.suppress(Exception):
+        data = {sid: q.serialize() for sid, q in queues.items() if q.all_tracks}
+        _QUEUES_FILE.write_text(json.dumps(data))
+
+
+def _schedule_save() -> None:
+    """Debounce queue file writes — coalesce within 2 seconds."""
+    global _save_task
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        _save_queues_now()
+        return
+    if _save_task is not None:
+        _save_task.cancel()
+    _save_task = loop.call_later(2.0, _save_queues_now)
+
+
+def _load_queues() -> None:
+    if not _QUEUES_FILE.exists():
+        return
+    with contextlib.suppress(Exception):
+        raw = json.loads(_QUEUES_FILE.read_text())
+        for sid, data in raw.items():
+            queues[sid] = QueueState.deserialize(data)
+
+
+_load_queues()
+
+
 def get_queue(session_id: str) -> QueueState:
     if session_id not in queues:
         queues[session_id] = QueueState()
     return queues[session_id]
+
+
+def mark_dirty() -> None:
+    """Signal that queue state changed and should be persisted."""
+    _schedule_save()

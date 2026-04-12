@@ -55,6 +55,21 @@ export async function fetchGenres(): Promise<string[]> {
 }
 
 // Queue API
+export interface QueueSnapshot {
+  has_state: boolean;
+  sources: string[];
+  track_count: number;
+  queue_size: number;
+  weights: Record<string, number>;
+  played_count: number;
+}
+
+export async function fetchQueueSnapshot(): Promise<QueueSnapshot> {
+  const res = await fetch("/api/queue/snapshot");
+  if (!res.ok) throw new Error("Failed to fetch snapshot");
+  return res.json();
+}
+
 export async function fetchQueue(): Promise<QueueState> {
   const res = await fetch("/api/queue");
   if (!res.ok) throw new Error("Failed to fetch queue");

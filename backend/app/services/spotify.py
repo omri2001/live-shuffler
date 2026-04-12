@@ -54,6 +54,14 @@ def add_session(session_id: str, data: dict) -> None:
     _schedule_save()
 
 
+def get_user_id(session_id: str) -> str:
+    """Get the Spotify user ID for a session. Falls back to session_id."""
+    session = sessions.get(session_id)
+    if session:
+        return session.get("user_id", session_id)
+    return session_id
+
+
 async def refresh_token_if_needed(session_id: str) -> str | None:
     """Return a valid access token, refreshing if expired."""
     session = sessions.get(session_id)

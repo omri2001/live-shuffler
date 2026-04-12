@@ -19,7 +19,7 @@ export default function GenreCircles({
   onFavoriteMetricsChange,
   gridColumns,
 }: GenreCirclesProps) {
-  const { refreshQueue } = usePlayer();
+  const { state, refreshQueue } = usePlayer();
   const scrollRef = useRef<HTMLDivElement>(null);
   const circleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -50,10 +50,17 @@ export default function GenreCircles({
       : allMetricNames;
 
   const [values, setValues] = useState<Record<string, number>>({});
+  const restoredRef = useRef(false);
 
   useEffect(() => {
     if (allMetricNames.length > 0 && Object.keys(values).length === 0) {
-      setValues(Object.fromEntries(allMetricNames.map((m) => [m, 0])));
+      // Restore last_weights from backend on first load, otherwise init to 0
+      const restored =
+        !restoredRef.current && state.lastWeights ? state.lastWeights : {};
+      restoredRef.current = true;
+      setValues(
+        Object.fromEntries(allMetricNames.map((m) => [m, restored[m] ?? 0])),
+      );
     }
   }, [allMetricNames.length]);
 

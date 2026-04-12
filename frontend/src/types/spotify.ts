@@ -43,4 +43,5 @@ export interface QueueState {
   current_index: number;
   current_track: Track | null;
   sources?: string[];
+  last_weights?: Record<string, number>;
 }

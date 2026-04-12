@@ -12,9 +12,12 @@ import type { Track, QueueState } from "../types/spotify";
 import {
   fetchCurrentTrack,
   fetchQueue,
+  fetchQueueSnapshot,
+  queueClear,
   queueSkip,
   addSourceWithProgress,
   syncCurrentTrack,
+  type QueueSnapshot,
 } from "../api/spotify";
 
 interface PlayerState {
@@ -25,6 +28,7 @@ interface PlayerState {
   queue: Track[];
   queueIndex: number;
   sources: string[];
+  lastWeights: Record<string, number>;
 }
 
 type PlayerAction =
@@ -43,6 +47,7 @@ const initialState: PlayerState = {
   queue: [],
   queueIndex: -1,
   sources: [],
+  lastWeights: {},
 };
 
 function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
@@ -125,6 +130,7 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
         currentTrack: newCurrentTrack,
         durationMs: newDurationMs,
         sources: action.queue.sources ?? state.sources,
+        lastWeights: action.queue.last_weights ?? state.lastWeights,
       };
     }
     default:
@@ -138,6 +144,8 @@ const PlayerContext = createContext<{
   refreshQueue: () => Promise<QueueState | null>;
   startupDone: boolean;
   startupMessage: string;
+  pendingResume: QueueSnapshot | null;
+  resolveResume: (resume: boolean) => void;
 } | null>(null);
 
 export function PlayerProvider({
@@ -155,7 +163,17 @@ export function PlayerProvider({
 
   const [startupDone, setStartupDone] = useState(false);
   const [startupMessage, setStartupMessage] = useState("");
+  const [pendingResume, setPendingResume] = useState<QueueSnapshot | null>(
+    null,
+  );
+  const resumeResolverRef = useRef<((resume: boolean) => void) | null>(null);
   const lastSyncedIdRef = useRef<string | null>(null);
+
+  const resolveResume = useCallback((resume: boolean) => {
+    resumeResolverRef.current?.(resume);
+    resumeResolverRef.current = null;
+    setPendingResume(null);
+  }, []);
 
   const refreshQueue = useCallback(async (): Promise<QueueState | null> => {
     try {
@@ -193,18 +211,30 @@ export function PlayerProvider({
         // continue even if playback check fails
       }
 
-      // 2. Check if queue already has sources (page refresh / existing session)
+      // 2. Check snapshot — offer resume if previous session exists
       try {
-        const q = await fetchQueue();
-        if (!cancelled) {
-          dispatch({ type: "SET_QUEUE", queue: q });
-          if (q.sources && q.sources.length > 0) {
+        const snapshot = await fetchQueueSnapshot();
+        if (!cancelled && snapshot.has_state) {
+          // Pause startup and ask user
+          const shouldResume = await new Promise<boolean>((resolve) => {
+            resumeResolverRef.current = resolve;
+            setPendingResume(snapshot);
+          });
+
+          if (cancelled) return;
+
+          if (shouldResume) {
+            // Load existing queue and continue
+            await refreshQueue();
             setStartupDone(true);
             return;
+          } else {
+            // Clear and start fresh
+            await queueClear();
           }
         }
       } catch {
-        // continue to auto-load
+        // no snapshot or error — continue to fresh start
       }
 
       // 3. Auto-load liked songs
@@ -333,7 +363,15 @@ export function PlayerProvider({
 
   return (
     <PlayerContext.Provider
-      value={{ state, dispatch, refreshQueue, startupDone, startupMessage }}
+      value={{
+        state,
+        dispatch,
+        refreshQueue,
+        startupDone,
+        startupMessage,
+        pendingResume,
+        resolveResume,
+      }}
     >
       {children}
     </PlayerContext.Provider>

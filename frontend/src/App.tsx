@@ -39,7 +39,50 @@ function MainContent({
   gridColumns: number;
   onInspect: (trackId: string) => void;
 }) {
-  const { startupDone, startupMessage } = usePlayer();
+  const { startupDone, startupMessage, pendingResume, resolveResume } =
+    usePlayer();
+
+  if (pendingResume) {
+    const activeWeights = Object.entries(pendingResume.weights).filter(
+      ([, v]) => v > 0,
+    );
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+        <div className="bg-spotify-dark-gray rounded-xl p-5 max-w-xs w-full shadow-xl border border-white/10">
+          <p className="text-spotify-white text-sm font-medium mb-2">
+            Previous session found
+          </p>
+          <p className="text-spotify-gray text-xs mb-4">
+            {pendingResume.track_count} tracks &middot;{" "}
+            {pendingResume.played_count} played
+            {activeWeights.length > 0 && (
+              <span>
+                {" "}
+                &middot;{" "}
+                {activeWeights
+                  .map(([name, val]) => `${name} ${val}%`)
+                  .join(", ")}
+              </span>
+            )}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => resolveResume(true)}
+              className="px-4 py-1.5 rounded-full bg-spotify-green text-black text-xs font-semibold hover:bg-spotify-green-hover transition-colors"
+            >
+              Continue
+            </button>
+            <button
+              onClick={() => resolveResume(false)}
+              className="px-4 py-1.5 rounded-full border border-white/20 text-spotify-gray text-xs font-semibold hover:text-spotify-white hover:border-white/40 transition-colors"
+            >
+              New Session
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!startupDone) {
     return (

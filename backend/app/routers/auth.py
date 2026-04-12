@@ -52,14 +52,25 @@ async def callback(code: str):
         return RedirectResponse(f"{FRONTEND_URL}?error=token_exchange_failed")
 
     data = resp.json()
+    access_token = data["access_token"]
+
+    # Fetch Spotify user ID to key persistent state
+    async with httpx.AsyncClient() as client:
+        me_resp = await client.get(
+            "https://api.spotify.com/v1/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+    spotify_user_id = me_resp.json().get("id", "") if me_resp.status_code == 200 else ""
+
     session_id = secrets.token_urlsafe(32)
 
     add_session(
         session_id,
         {
-            "access_token": data["access_token"],
+            "access_token": access_token,
             "refresh_token": data["refresh_token"],
             "expires_at": time.time() + data["expires_in"] - 60,
+            "user_id": spotify_user_id,
         },
     )
 
