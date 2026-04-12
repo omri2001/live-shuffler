@@ -44,11 +44,7 @@ import { PlayerProvider, usePlayer } from "../PlayerContext";
 import { createElement } from "react";
 
 function wrapper({ children }: { children: React.ReactNode }) {
-  return createElement(
-    PlayerProvider,
-    { authenticated: false },
-    children,
-  );
+  return createElement(PlayerProvider, { authenticated: false }, children);
 }
 
 describe("PlayerContext", () => {

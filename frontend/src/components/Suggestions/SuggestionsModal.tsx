@@ -68,7 +68,7 @@ export default function SuggestionsModal({
   }, [open, onClose]);
 
   const handleAccept = async (trackId: string) => {
-    const result = await api.suggestionsAccept(trackId);
+    await api.suggestionsAccept(trackId);
     setSuggestions((prev) => prev.filter((s) => s.track_id !== trackId));
     await refreshQueue();
   };

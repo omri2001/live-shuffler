@@ -1,8 +1,8 @@
 from app.services.scoring import (
+    TrackData,
     _build_graduated_scorer,
     compute_weighted_score,
     score_track,
-    TrackData,
 )
 
 

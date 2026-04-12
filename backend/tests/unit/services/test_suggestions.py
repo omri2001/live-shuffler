@@ -43,7 +43,8 @@ class TestSuggestionPool:
         track = pool.accept("t1")
 
         # Assert
-        assert track["id"] == "t1"
+        assert track is not None
+        assert track.get("id") == "t1"
         assert "t1" not in pool.suggestions
 
     def test_list_sorted_should_order_by_count_desc(self):

@@ -19,26 +19,28 @@ repos:
       - id: ruff-format
         files: ^backend/
 
-  - repo: https://github.com/astral-sh/ty
-    rev: ty-0.0.1a7
-    hooks:
-      - id: ty
-        files: ^backend/
-
   - repo: local
     hooks:
+      - id: ty
+        name: ty
+        entry: bash -c 'cd backend && uv run ty check .'
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+
       - id: frontend-lint
         name: eslint
-        entry: npm run lint
+        entry: bash -c 'cd frontend && npm run lint'
         language: system
         files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false
 
       - id: frontend-format
         name: prettier
-        entry: npx prettier --check
+        entry: bash -c 'cd frontend && npx prettier --check "src/**/*.{ts,tsx,css,json}"'
         language: system
         files: ^frontend/.*\.(ts|tsx|css|json)$
+        pass_filenames: false
 
       - id: frontend-typecheck
         name: tsc

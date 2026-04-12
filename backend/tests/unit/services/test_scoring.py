@@ -1,13 +1,10 @@
 import re
 
 from app.services.scoring import (
+    TrackData,
     _build_binary_scorer,
-    _build_graduated_scorer,
     _genre_contains,
     _text_matches,
-    compute_weighted_score,
-    score_track,
-    TrackData,
 )
 
 

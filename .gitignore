@@ -4,6 +4,8 @@ node_modules/
 __pycache__/
 *.pyc
 .coverage
+.coverage.*
+htmlcov/
 
 .vite/
 frontend/.vite/

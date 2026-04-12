@@ -353,7 +353,7 @@ function AppContent() {
               setRequestsEnabled(false);
               setSuggestionsCount(0);
             } else {
-              const s = await suggestionsEnable();
+              await suggestionsEnable();
               setRequestsEnabled(true);
             }
           }}

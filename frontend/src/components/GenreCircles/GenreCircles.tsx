@@ -186,6 +186,7 @@ export default function GenreCircles({
   );
 
   const valuesRef = useRef(values);
+  // eslint-disable-next-line react-hooks/refs
   valuesRef.current = values;
 
   const handleCommit = useCallback(async () => {

@@ -3,7 +3,7 @@ from app.services.queue import QueueState
 
 def _track(id: str, scores: dict | None = None) -> dict:
     """Helper to create a minimal track dict."""
-    t = {"id": id, "uri": f"spotify:track:{id}", "name": f"Track {id}"}
+    t: dict = {"id": id, "uri": f"spotify:track:{id}", "name": f"Track {id}"}
     if scores is not None:
         t["_scores"] = scores
     return t
@@ -71,6 +71,7 @@ class TestQueueNavigation:
         result = q.skip()
 
         # Assert
+        assert result is not None
         assert result["id"] == "b"
         assert "a" in q.played
 
@@ -92,6 +93,7 @@ class TestQueueNavigation:
         result = q.jump(2)
 
         # Assert
+        assert result is not None
         assert result["id"] == "c"
         assert "a" in q.played and "b" in q.played
         assert "c" not in q.played

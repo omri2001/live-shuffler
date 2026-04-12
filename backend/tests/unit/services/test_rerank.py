@@ -2,7 +2,7 @@ from app.services.queue import QueueState
 
 
 def _track(id: str, scores: dict | None = None) -> dict:
-    t = {"id": id, "uri": f"spotify:track:{id}", "name": f"Track {id}"}
+    t: dict = {"id": id, "uri": f"spotify:track:{id}", "name": f"Track {id}"}
     if scores is not None:
         t["_scores"] = scores
     return t

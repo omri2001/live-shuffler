@@ -111,7 +111,16 @@ describe("addSourceWithProgress", () => {
   it("should parse SSE stream and call onProgress", async () => {
     const events: AddProgress[] = [
       { step: "fetching", progress: 0, total: 0, message: "Fetching..." },
-      { step: "done", message: "Done", queue: { tracks: [], current_index: 0, current_track: null, sources: [] } },
+      {
+        step: "done",
+        message: "Done",
+        queue: {
+          tracks: [],
+          current_index: 0,
+          current_track: null,
+          sources: [],
+        },
+      },
     ];
 
     const sseText = events
@@ -142,8 +151,8 @@ describe("addSourceWithProgress", () => {
   it("should throw on non-ok response", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: false });
 
-    await expect(
-      addSourceWithProgress("liked", () => {}),
-    ).rejects.toThrow("Failed to add source");
+    await expect(addSourceWithProgress("liked", () => {})).rejects.toThrow(
+      "Failed to add source",
+    );
   });
 });
