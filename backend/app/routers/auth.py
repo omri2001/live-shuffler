@@ -1,20 +1,21 @@
 import secrets
 import time
 import urllib.parse
+
 import httpx
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 
 from app.config import (
+    FRONTEND_URL,
+    SCOPES,
+    SPOTIFY_AUTH_URL,
     SPOTIFY_CLIENT_ID,
     SPOTIFY_CLIENT_SECRET,
     SPOTIFY_REDIRECT_URI,
-    SPOTIFY_AUTH_URL,
     SPOTIFY_TOKEN_URL,
-    FRONTEND_URL,
-    SCOPES,
 )
-from app.services.spotify import sessions, add_session
+from app.services.spotify import add_session, sessions
 
 router = APIRouter()
 

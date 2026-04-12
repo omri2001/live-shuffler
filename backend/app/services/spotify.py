@@ -2,8 +2,10 @@ import asyncio
 import json
 import time
 from pathlib import Path
+
 import httpx
-from app.config import SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_TOKEN_URL, SPOTIFY_API_BASE
+
+from app.config import SPOTIFY_API_BASE, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_TOKEN_URL
 
 _SESSIONS_FILE = Path(__file__).resolve().parent.parent / "_sessions.json"
 

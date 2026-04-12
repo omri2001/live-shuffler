@@ -4,7 +4,9 @@ Accepts Spotify track IDs directly. Batch endpoint supports up to 40 IDs per req
 """
 
 from __future__ import annotations
-from typing import Callable
+
+from collections.abc import Callable
+
 import httpx
 
 RECCOBEATS_BASE = "https://api.reccobeats.com"

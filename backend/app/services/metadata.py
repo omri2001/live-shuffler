@@ -5,9 +5,9 @@ Uses Spotify API for artist/album genres, ReccoBeats API for audio features
 """
 
 from __future__ import annotations
-from typing import Callable
-from app.services.spotify import spotify_request
+
 from app.services.reccobeats import fetch_audio_features
+from app.services.spotify import spotify_request
 
 
 def _chunk(lst: list, size: int):

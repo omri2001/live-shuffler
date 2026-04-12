@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import FRONTEND_URL
-from app.routers import auth, spotify, queue, refine, suggestions
+from app.routers import auth, queue, refine, spotify, suggestions
 
 app = FastAPI(title="Live Shuffle API")
 

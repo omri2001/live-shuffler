@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
-from app.services.spotify import sessions, spotify_request
-from app.services.suggestions import get_pool, get_pool_by_code, enable_pool, disable_pool
 from app.services.queue import get_queue
+from app.services.spotify import sessions, spotify_request
+from app.services.suggestions import disable_pool, enable_pool, get_pool, get_pool_by_code
 
 router = APIRouter()
 
@@ -71,9 +71,9 @@ async def accept(request: Request, track_id: str):
     track = resp.json()
 
     # Enrich and score
-    from app.services.metadata import enrich_artist_genres, enrich_audio_features, attach_enrichment
-    from app.services.scoring import score_track
+    from app.services.metadata import attach_enrichment, enrich_artist_genres, enrich_audio_features
     from app.services.score_cache import get_cached_scores, set_cached_scores_bulk
+    from app.services.scoring import score_track
 
     cached = get_cached_scores(track_id)
     if cached:

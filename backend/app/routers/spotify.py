@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Response
 
-from app.services.spotify import spotify_request, sessions
+from app.services.spotify import sessions, spotify_request
 
 router = APIRouter()
 

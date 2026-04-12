@@ -1,0 +1,48 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.3
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.8.3
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.2
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+
+  - repo: https://github.com/astral-sh/ty
+    rev: ty-0.0.1a7
+    hooks:
+      - id: ty
+        files: ^backend/
+
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: eslint
+        entry: npm run lint
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+
+      - id: frontend-format
+        name: prettier
+        entry: npx prettier --check
+        language: system
+        files: ^frontend/.*\.(ts|tsx|css|json)$
+
+      - id: frontend-typecheck
+        name: tsc
+        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false

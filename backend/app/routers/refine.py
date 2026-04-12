@@ -1,14 +1,15 @@
 import json
 import statistics
+
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.services.spotify import sessions, spotify_request
-from app.services.metadata import enrich_artist_genres, enrich_audio_features, attach_enrichment
-from app.services.scoring import get_metric_full_configs, score_track_with_breakdown, SCORERS
-from app.services.tracks import fetch_tracks_for_source
+from app.services.metadata import attach_enrichment, enrich_artist_genres, enrich_audio_features
 from app.services.queue import get_queue
+from app.services.scoring import SCORERS, get_metric_full_configs, score_track_with_breakdown
+from app.services.spotify import sessions, spotify_request
+from app.services.tracks import fetch_tracks_for_source
 
 router = APIRouter()
 

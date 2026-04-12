@@ -1,13 +1,14 @@
 import json
+
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.services.metadata import attach_enrichment, enrich_artist_genres, enrich_audio_features
 from app.services.queue import get_queue
-from app.services.spotify import sessions, spotify_request
-from app.services.metadata import enrich_artist_genres, enrich_album_genres, enrich_audio_features, attach_enrichment
-from app.services.scoring import score_track, get_scorer_names, get_metric_configs
 from app.services.score_cache import get_cached_scores, set_cached_scores_bulk
+from app.services.scoring import get_metric_configs, score_track
+from app.services.spotify import sessions, spotify_request
 from app.services.tracks import fetch_tracks_for_source
 
 router = APIRouter()
@@ -149,7 +150,8 @@ async def add_to_queue(request: Request, body: AddTracksBody):
 
             uncached_tracks = attach_enrichment(uncached_tracks, genre_map, {}, audio_map)
 
-            yield _sse_event({"step": "scoring", "progress": 0, "total": total, "message": f"Scoring tracks... 0/{total}"})
+            msg = f"Scoring tracks... 0/{total}"
+            yield _sse_event({"step": "scoring", "progress": 0, "total": total, "message": msg})
             new_scores: dict[str, dict[str, int]] = {}
             scored_count = len(cached_tracks)
             for i, track in enumerate(uncached_tracks):

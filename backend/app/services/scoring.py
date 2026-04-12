@@ -17,8 +17,9 @@ For metrics that need custom logic beyond what YAML supports, use the @scorer de
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, TypedDict
+from typing import TypedDict
 
 import yaml
 

@@ -1,8 +1,7 @@
 from __future__ import annotations
+
 import random
 from dataclasses import dataclass, field
-
-from app.services.scoring import compute_weighted_score
 
 DEFAULT_QUEUE_SIZE = 10
 
