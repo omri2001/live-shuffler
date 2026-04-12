@@ -13,6 +13,12 @@ _SESSIONS_FILE = Path(__file__).resolve().parent.parent / "_sessions.json"
 # Session store: session_id -> { access_token, refresh_token, expires_at }
 sessions: dict[str, dict] = {}
 
+# Per-session locks to prevent concurrent token refreshes
+_refresh_locks: dict[str, asyncio.Lock] = {}
+
+# Debounce timer for session file saves
+_save_task: asyncio.TimerHandle | None = None
+
 
 def _load_sessions() -> None:
     if _SESSIONS_FILE.exists():
@@ -20,9 +26,23 @@ def _load_sessions() -> None:
             sessions.update(json.loads(_SESSIONS_FILE.read_text()))
 
 
-def _save_sessions() -> None:
+def _save_sessions_now() -> None:
     with contextlib.suppress(Exception):
         _SESSIONS_FILE.write_text(json.dumps(sessions))
+
+
+def _schedule_save() -> None:
+    """Debounce session file writes — coalesce saves within 1 second."""
+    global _save_task
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # No event loop (e.g. during import) — save immediately
+        _save_sessions_now()
+        return
+    if _save_task is not None:
+        _save_task.cancel()
+    _save_task = loop.call_later(1.0, _save_sessions_now)
 
 
 # Load on import so sessions survive reloads
@@ -31,7 +51,7 @@ _load_sessions()
 
 def add_session(session_id: str, data: dict) -> None:
     sessions[session_id] = data
-    _save_sessions()
+    _schedule_save()
 
 
 async def refresh_token_if_needed(session_id: str) -> str | None:
@@ -40,7 +60,19 @@ async def refresh_token_if_needed(session_id: str) -> str | None:
     if not session:
         return None
 
-    if time.time() >= session["expires_at"]:
+    # Fast path: token still valid, no lock needed
+    if time.time() < session["expires_at"]:
+        return session["access_token"]
+
+    # Slow path: acquire per-session lock so only one refresh happens
+    if session_id not in _refresh_locks:
+        _refresh_locks[session_id] = asyncio.Lock()
+
+    async with _refresh_locks[session_id]:
+        # Re-check after acquiring lock — another coroutine may have refreshed
+        if time.time() < session["expires_at"]:
+            return session["access_token"]
+
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 SPOTIFY_TOKEN_URL,
@@ -58,7 +90,7 @@ async def refresh_token_if_needed(session_id: str) -> str | None:
             session["expires_at"] = time.time() + data["expires_in"] - 60
             if "refresh_token" in data:
                 session["refresh_token"] = data["refresh_token"]
-            _save_sessions()
+            _schedule_save()
 
     return session["access_token"]
 

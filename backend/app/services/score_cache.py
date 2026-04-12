@@ -5,6 +5,7 @@ When a metric YAML changes, only that metric's cached scores are invalidated."""
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from pathlib import Path
@@ -70,7 +71,10 @@ def _load():
         _cache[track_id] = {m: s for m, s in track_scores.items() if m not in changed_metrics}
 
 
-def _save():
+_save_task: asyncio.TimerHandle | None = None
+
+
+def _save_now():
     try:
         data = {
             "_fingerprints": _all_metric_fingerprints(),
@@ -79,6 +83,19 @@ def _save():
         _CACHE_FILE.write_text(json.dumps(data))
     except Exception:
         pass
+
+
+def _save():
+    """Debounce cache file writes — coalesce saves within 2 seconds."""
+    global _save_task
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        _save_now()
+        return
+    if _save_task is not None:
+        _save_task.cancel()
+    _save_task = loop.call_later(2.0, _save_now)
 
 
 # Load on import
