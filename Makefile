@@ -1,4 +1,4 @@
-.PHONY: run-docs run-backend run-frontend setup build-docs dev down clean test test-e2e test-all test-cov
+.PHONY: run-docs run-backend run-frontend setup build-docs dev down clean test test-frontend test-e2e test-all test-cov
 
 # Run services
 run-frontend:
@@ -23,6 +23,9 @@ build-docs:
 # Test
 test:
 	cd backend && uv run pytest tests/unit/ tests/integration/ -v
+
+test-frontend:
+	cd frontend && npx vitest run
 
 test-e2e:
 	cd backend && uv run pytest tests/e2e/ -m e2e -v
